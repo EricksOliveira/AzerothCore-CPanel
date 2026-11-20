@@ -57,6 +57,9 @@ public sealed class ServerManager : IDisposable
 
     public TimeSpan CrashRestartWindow { get; set; } = TimeSpan.FromMinutes(5);
 
+    /// <summary>Raised for events worth a desktop notification: (title, message, isError). Any thread.</summary>
+    public event Action<string, string, bool>? Alert;
+
     public bool AnyRunning => Auth.IsRunning || World.IsRunning;
 
     public bool AllRunning => Auth.IsRunning && World.IsRunning;
@@ -171,6 +174,7 @@ public sealed class ServerManager : IDisposable
         if (!AutoRestartOnCrash)
         {
             server.Report($"{server.Name} caiu (código {code}). O reinício automático está desligado.", true);
+            Alert?.Invoke($"{server.Name} caiu", "O reinício automático está desligado.", true);
             return;
         }
 
@@ -200,6 +204,9 @@ public sealed class ServerManager : IDisposable
                     $"{server.Name} caiu (código {code}) {CrashRestartLimit + 1} vezes em " +
                     $"{CrashRestartWindow.TotalMinutes:0} minutos. Reinício automático cancelado; " +
                     "veja o Errors.log e os logs acima.", true);
+                Alert?.Invoke($"{server.Name} caiu de novo",
+                    $"Caiu {CrashRestartLimit + 1} vezes em {CrashRestartWindow.TotalMinutes:0} minutos. " +
+                    "Reinício automático cancelado.", true);
                 return;
             }
 
@@ -213,6 +220,8 @@ public sealed class ServerManager : IDisposable
         server.Report(
             $"{server.Name} caiu (código {code}). Reiniciando em {CrashRestartDelay.TotalSeconds:0}s " +
             $"(tentativa {attempt} de {CrashRestartLimit})...", true);
+        Alert?.Invoke($"{server.Name} caiu",
+            $"Reiniciando em {CrashRestartDelay.TotalSeconds:0}s (tentativa {attempt} de {CrashRestartLimit}).", true);
 
         _ = RestartAfterDelayAsync(server, cts);
     }

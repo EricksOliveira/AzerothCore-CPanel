@@ -29,6 +29,9 @@ public sealed class PanelSettings
 
     public int CrashRestartWindowMinutes { get; set; } = 5;
 
+    /// <summary>Minimizing the window hides it in the notification area instead of the taskbar.</summary>
+    public bool MinimizeToTray { get; set; } = true;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 

@@ -88,6 +88,10 @@
       <CheckBox x:Name="AutoRestartCheck" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="20,0,0,0"
                 Content="Reiniciar servidor se cair"
                 Checked="AutoRestartCheck_Changed" Unchecked="AutoRestartCheck_Changed" />
+      <CheckBox x:Name="MinimizeToTrayCheck" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="20,0,0,0"
+                Content="Minimizar para a bandeja"
+                ToolTip="Ao minimizar, o painel sai da barra de tarefas e fica no ícone perto do relógio."
+                Checked="MinimizeToTrayCheck_Changed" Unchecked="MinimizeToTrayCheck_Changed" />
       <Button DockPanel.Dock="Right" Content="Limpar logs" Click="ClearLogsButton_Click" />
       <TextBlock />
     </DockPanel>

@@ -17,11 +17,13 @@ public partial class MainWindow : Window
 {
     private readonly PanelSettings _settings;
     private readonly ServerManager _manager = new();
+    private readonly TrayIcon _tray = new();
     private readonly LogPane _authLog;
     private readonly LogPane _worldLog;
     private readonly DispatcherTimer _uiTimer;
     private bool _busy;
     private bool _closeConfirmed;
+    private bool _trayHintShown;
 
     public MainWindow()
     {
@@ -41,12 +43,26 @@ public partial class MainWindow : Window
             $"Se um servidor cair, ele é iniciado de novo em {_manager.CrashRestartDelay.TotalSeconds:0}s. " +
             $"Depois de {_manager.CrashRestartLimit} quedas em {_manager.CrashRestartWindow.TotalMinutes:0} " +
             "minutos o painel desiste, para não ficar em loop.";
+        MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         ApplyPaths();
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
         _manager.World.OutputReceived += (_, line, isError) => _worldLog.Append(line, isError);
         _manager.Auth.StateChanged += _ => Dispatcher.BeginInvoke(new Action(UpdateUi));
-        _manager.World.StateChanged += _ => Dispatcher.BeginInvoke(new Action(UpdateUi));
+        _manager.World.StateChanged += world => Dispatcher.BeginInvoke(new Action(() => OnWorldStateChanged(world)));
+        _manager.Alert += (title, message, isError) =>
+            Dispatcher.BeginInvoke(new Action(() => _tray.ShowNotification(title, message, isError)));
+
+        _tray.OpenRequested += RestoreFromTray;
+        _tray.StartRequested += StartServers;
+        _tray.StopRequested += async () => await StopServersAsync();
+        _tray.RestartRequested += async () => await RestartServersAsync();
+        _tray.ExitRequested += () =>
+        {
+            // Closing shows the "servers still running" question, so bring the window back first.
+            RestoreFromTray();
+            Close();
+        };
 
         // Flushes logs and refreshes the uptime a few times per second.
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
@@ -114,22 +130,33 @@ public partial class MainWindow : Window
 
         if (auth is null || world is null)
         {
-            MessageBox.Show(this,
+            ShowMessage(
                 "Não encontrei o authserver.exe e o worldserver.exe nessa pasta.\n\n" +
                 "Selecione a pasta raiz do Repack ou a pasta da Build (por exemplo, onde fica a pasta bin).",
-                Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
-    private void StartButton_Click(object sender, RoutedEventArgs e)
+    private void StartButton_Click(object sender, RoutedEventArgs e) => StartServers();
+
+    private async void StopButton_Click(object sender, RoutedEventArgs e) => await StopServersAsync();
+
+    private async void RestartButton_Click(object sender, RoutedEventArgs e) => await RestartServersAsync();
+
+    private void StartServers()
     {
+        if (_busy || !PathsValid || _manager.AllRunning)
+        {
+            return;
+        }
+
         IReadOnlyList<string> foreign = _manager.FindForeignServers();
         if (foreign.Count > 0)
         {
-            MessageBoxResult answer = MessageBox.Show(this,
+            MessageBoxResult answer = ShowMessage(
                 "Já existe servidor rodando fora do painel:\n\n" + string.Join("\n", foreign) +
                 "\n\nIniciar outro pode causar conflito de portas. Continuar mesmo assim?",
-                Title, MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (answer != MessageBoxResult.Yes)
             {
@@ -149,14 +176,20 @@ public partial class MainWindow : Window
         UpdateUi();
     }
 
-    private async void StopButton_Click(object sender, RoutedEventArgs e)
+    private async Task StopServersAsync()
     {
-        await RunBusyAsync(_manager.StopAllAsync, "Não foi possível parar os servidores");
+        if (!_busy)
+        {
+            await RunBusyAsync(_manager.StopAllAsync, "Não foi possível parar os servidores");
+        }
     }
 
-    private async void RestartButton_Click(object sender, RoutedEventArgs e)
+    private async Task RestartServersAsync()
     {
-        await RunBusyAsync(_manager.RestartAllAsync, "Não foi possível reiniciar os servidores");
+        if (!_busy && PathsValid)
+        {
+            await RunBusyAsync(_manager.RestartAllAsync, "Não foi possível reiniciar os servidores");
+        }
     }
 
     private void SendCommandButton_Click(object sender, RoutedEventArgs e) => SendCommand();
@@ -220,10 +253,64 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MinimizeToTrayCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settings is null)
+        {
+            return;
+        }
+
+        bool enabled = MinimizeToTrayCheck.IsChecked == true;
+        if (_settings.MinimizeToTray != enabled)
+        {
+            _settings.MinimizeToTray = enabled;
+            SaveSettings();
+        }
+    }
+
     private void ClearLogsButton_Click(object sender, RoutedEventArgs e)
     {
         _authLog.Clear();
         _worldLog.Clear();
+    }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+
+        if (WindowState == WindowState.Minimized && _settings.MinimizeToTray)
+        {
+            Hide();
+
+            if (!_trayHintShown)
+            {
+                _trayHintShown = true;
+                _tray.ShowNotification("AzerothCore CPanel",
+                    "O painel continua rodando aqui. Clique no ícone para abrir.", false);
+            }
+        }
+    }
+
+    private void RestoreFromTray()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Activate();
+    }
+
+    private void OnWorldStateChanged(ServerProcess world)
+    {
+        UpdateUi();
+
+        // Only worth a notification when the panel is not on screen.
+        if (world.State == ServerState.Running && !IsVisible)
+        {
+            _tray.ShowNotification("Worldserver online", "O servidor terminou de carregar.", false);
+        }
     }
 
     protected override async void OnClosing(CancelEventArgs e)
@@ -241,10 +328,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        MessageBoxResult answer = MessageBox.Show(this,
+        MessageBoxResult answer = ShowMessage(
             "Os servidores ainda estão rodando.\n\n" +
             "Desligar os servidores (salvando os personagens) e fechar o painel?",
-            Title, MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (answer != MessageBoxResult.Yes)
         {
@@ -259,6 +346,7 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _uiTimer.Stop();
+        _tray.Dispose();
         _manager.Dispose();
         base.OnClosed(e);
     }
@@ -287,10 +375,13 @@ public partial class MainWindow : Window
     {
         bool anyRunning = _manager.AnyRunning;
         bool active = anyRunning || _manager.AnyRestartPending;
+        bool canStart = !_busy && PathsValid && !_manager.AllRunning;
+        bool canStop = !_busy && active;
+        bool canRestart = !_busy && PathsValid && active;
 
-        StartButton.IsEnabled = !_busy && PathsValid && !_manager.AllRunning;
-        StopButton.IsEnabled = !_busy && active;
-        RestartButton.IsEnabled = !_busy && PathsValid && active;
+        StartButton.IsEnabled = canStart;
+        StopButton.IsEnabled = canStop;
+        RestartButton.IsEnabled = canRestart;
         BrowseButton.IsEnabled = !_busy && !active;
 
         bool canSend = _manager.World.State == ServerState.Running;
@@ -298,6 +389,10 @@ public partial class MainWindow : Window
         SendCommandButton.IsEnabled = canSend;
 
         UpdateStatus();
+
+        _tray.Update(canStart, canStop, canRestart,
+            $"AzerothCore CPanel\n{_manager.World.Name}: {StateLabel(_manager.World).Label}\n" +
+            $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}");
     }
 
     private void UpdateStatus()
@@ -306,16 +401,18 @@ public partial class MainWindow : Window
         ShowState(_manager.World, WorldDot, WorldStatusText);
     }
 
+    private (Brush Color, string Label) StateLabel(ServerProcess server) => server.State switch
+    {
+        ServerState.Starting => (Brushes.Orange, "Iniciando..."),
+        ServerState.Running => (Brushes.LimeGreen, "Online"),
+        ServerState.Stopping => (Brushes.Orange, "Parando..."),
+        _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, "Caiu, reiniciando..."),
+        _ => (Brushes.Gray, "Parado"),
+    };
+
     private void ShowState(ServerProcess server, Ellipse dot, TextBlock text)
     {
-        (Brush color, string label) = server.State switch
-        {
-            ServerState.Starting => (Brushes.Orange, "Iniciando..."),
-            ServerState.Running => (Brushes.LimeGreen, "Online"),
-            ServerState.Stopping => (Brushes.Orange, "Parando..."),
-            _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, "Caiu, reiniciando..."),
-            _ => (Brushes.Gray, "Parado"),
-        };
+        (Brush color, string label) = StateLabel(server);
 
         if (server.State == ServerState.Running && server.StartedAt is DateTime startedAt)
         {
@@ -339,6 +436,12 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Message box owned by the window when it is on screen, standalone when it is in the tray.</summary>
+    private MessageBoxResult ShowMessage(string text, MessageBoxButton buttons, MessageBoxImage image) =>
+        IsVisible
+            ? MessageBox.Show(this, text, Title, buttons, image)
+            : MessageBox.Show(text, Title, buttons, image);
+
     private void ShowError(string title, Exception ex) =>
-        MessageBox.Show(this, $"{title}:\n\n{ex.Message}", Title, MessageBoxButton.OK, MessageBoxImage.Error);
+        ShowMessage($"{title}:\n\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
 }

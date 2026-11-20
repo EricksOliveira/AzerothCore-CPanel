@@ -29,10 +29,12 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Reinicia o worldserver sozinho quando ele pede restart (`server restart`, código de saída 2)
 - [x] Se o painel fechar ou travar, os servidores não ficam rodando escondidos (Job Object)
 - [x] Auto-restart em caso de crash, com limite de tentativas para não ficar em loop
+- [x] Ícone na bandeja do sistema: minimiza para perto do relógio, menu com Start/Stop/Restart e avisos quando
+  um servidor cai
 
 ### Próximas versões
 - [ ] Iniciar e parar o MySQL do Repack
-- [ ] Ícone na bandeja do sistema e opção de iniciar junto com o Windows
+- [ ] Opção de iniciar junto com o Windows
 - [ ] Uptime, uso de CPU e RAM de cada processo
 - [ ] Jogadores online
 - [ ] Console para enviar comandos GM (via SOAP)
@@ -56,6 +58,11 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   inicia de novo depois de 5 segundos. Depois de 3 quedas em 5 minutos ele desiste, porque o problema
   provavelmente é de configuração ou do banco de dados. Um `server shutdown` dado no jogo ou no console não
   conta como queda.
+- **Bandeja do sistema**: o ícone fica perto do relógio enquanto o painel está aberto. Clique nele para abrir o
+  painel; o botão direito mostra Start, Stop, Restart e Sair. Com **Minimizar para a bandeja** ligado (padrão),
+  minimizar tira o painel da barra de tarefas. Quando um servidor cai, aparece uma notificação. No Windows 11 o
+  ícone começa na área de ícones ocultos (a seta ^ ao lado do relógio); arraste-o para a barra para deixá-lo
+  sempre visível.
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
 ## Como compilar
