@@ -38,9 +38,9 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Controle do MySQL: status, iniciar e parar (MySQL portátil do Repack ou serviço do Windows), e iniciar o
   MySQL junto com o Start
 - [x] Comandos GM via SOAP: aba com conta GM, atalhos, histórico, e "Expulsar" na lista de jogadores
+- [x] Backup do banco de dados: manual ou agendado (1h, 6h, 12h, diário), em .zip, mantendo os últimos N
 
 ### Próximas versões
-- [ ] Backup agendado do banco de dados
 - [ ] Editor do `worldserver.conf` e do `authserver.conf`
 
 ## Requisitos
@@ -88,6 +88,11 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   do jogo com GM nível 3. A senha fica salva criptografada para o seu usuário do Windows (DPAPI). Tem atalhos
   (info do servidor, salvar personagens, anunciar, expulsar, criar conta, dar GM, recarregar config), histórico
   com as setas e, na aba **Jogadores**, o clique direito expulsa um jogador.
+- **Backup**: a aba **Backup** usa o `mysqldump` (achado ao lado do MySQL) para salvar os bancos escolhidos (contas e
+  personagens por padrão; o world é grande e pode ser recriado) num `backup_AAAA-MM-DD_HH-MM-SS.zip`, com um `.sql`
+  por banco. Pode ser manual ou automático (a cada 1, 6 ou 12 horas, ou uma vez por dia), e o painel apaga os
+  backups mais antigos além dos N últimos. A pasta padrão é `Backups` dentro da pasta do servidor. Funciona com os
+  servidores rodando (`--single-transaction`). Para restaurar: `mysql -u root -p acore_char < acore_char.sql`.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 

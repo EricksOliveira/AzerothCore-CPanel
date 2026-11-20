@@ -11,6 +11,7 @@ using AzerothCorePanel.Services;
 using AzerothCorePanel.Services.MySql;
 using AzerothCorePanel.Views;
 using Microsoft.Win32;
+using Path = System.IO.Path;
 
 namespace AzerothCorePanel;
 
@@ -27,6 +28,10 @@ public partial class MainWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private IMySqlController? _mySql;
     private MySqlState _mySqlState = MySqlState.Unknown;
+    private readonly DispatcherTimer _backupTimer;
+    private bool _backupRunning;
+    private bool _loadingBackupOptions;
+    private DateTime _lastBackupFailureUtc = DateTime.MinValue;
     private readonly List<string> _gmHistory = new();
     private int _gmHistoryIndex;
     private bool _gmRunning;
@@ -102,6 +107,11 @@ public partial class MainWindow : Window
         _playersTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
         _playersTimer.Tick += async (_, _) => await RefreshPlayersAsync();
         _playersTimer.Start();
+
+        LoadBackupOptions();
+        _backupTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _backupTimer.Tick += async (_, _) => await CheckScheduledBackupAsync();
+        _backupTimer.Start();
 
         UpdateUi();
     }
@@ -226,6 +236,12 @@ public partial class MainWindow : Window
         _mySqlState = _mySql?.GetState() ?? MySqlState.Unknown;
 
         UpdateSoapStatus();
+
+        // The backup UI exists only after the constructor loaded it (ApplyPaths also runs before that).
+        if (_backupTimer is not null)
+        {
+            UpdateBackupView();
+        }
     }
 
     private static string DescribePath(string path)
@@ -624,6 +640,7 @@ public partial class MainWindow : Window
         _uiTimer.Stop();
         _metricsTimer.Stop();
         _playersTimer.Stop();
+        _backupTimer.Stop();
         _tray.Dispose();
         _manager.Dispose();
         base.OnClosed(e);
@@ -961,6 +978,272 @@ public partial class MainWindow : Window
         string prefix = $"[{DateTime.Now:HH:mm:ss}]{(isError ? "!" : " ")} ";
         GmOutputBox.AppendText(prefix + text.Replace("\n", "\n" + new string(' ', prefix.Length)) + "\n");
         GmOutputBox.ScrollToEnd();
+    }
+
+    private string BackupFolderPath =>
+        !string.IsNullOrWhiteSpace(_settings.BackupFolder) ? _settings.BackupFolder
+        : Directory.Exists(_settings.ServerFolder) ? Path.Combine(_settings.ServerFolder, "Backups")
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AzerothCorePanel Backups");
+
+    private void LoadBackupOptions()
+    {
+        _loadingBackupOptions = true;
+        BackupAuthCheck.IsChecked = _settings.BackupAuth;
+        BackupCharactersCheck.IsChecked = _settings.BackupCharacters;
+        BackupWorldCheck.IsChecked = _settings.BackupWorld;
+        SelectByTag(BackupIntervalCombo, _settings.BackupIntervalHours);
+        SelectByTag(BackupKeepCombo, _settings.BackupKeep);
+        _loadingBackupOptions = false;
+        UpdateBackupView();
+    }
+
+    private static void SelectByTag(ComboBox combo, int value)
+    {
+        combo.SelectedItem = combo.Items.OfType<ComboBoxItem>()
+            .FirstOrDefault(item => item.Tag is string tag && tag == value.ToString())
+            ?? combo.Items[0];
+    }
+
+    private static int SelectedTag(ComboBox combo) =>
+        combo.SelectedItem is ComboBoxItem { Tag: string tag } && int.TryParse(tag, out int value) ? value : 0;
+
+    private void BackupOption_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settings is null || _loadingBackupOptions)
+        {
+            return;
+        }
+
+        _settings.BackupAuth = BackupAuthCheck.IsChecked == true;
+        _settings.BackupCharacters = BackupCharactersCheck.IsChecked == true;
+        _settings.BackupWorld = BackupWorldCheck.IsChecked == true;
+        _settings.BackupIntervalHours = SelectedTag(BackupIntervalCombo);
+        _settings.BackupKeep = SelectedTag(BackupKeepCombo);
+        SaveSettings();
+        UpdateBackupView();
+    }
+
+    private void BackupFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog { Title = "Pasta onde os backups serão salvos" };
+        if (Directory.Exists(BackupFolderPath))
+        {
+            dialog.InitialDirectory = BackupFolderPath;
+        }
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            _settings.BackupFolder = dialog.FolderName;
+            SaveSettings();
+            UpdateBackupView();
+        }
+    }
+
+    private void OpenBackupFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(BackupFolderPath);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe")
+            {
+                ArgumentList = { BackupFolderPath },
+                UseShellExecute = false,
+            });
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível abrir a pasta", ex);
+        }
+    }
+
+    private void ChooseMysqldumpButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Selecione o mysqldump.exe",
+            Filter = "mysqldump|mysqldump.exe;mariadb-dump.exe|Programas (*.exe)|*.exe",
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            _settings.MysqldumpPath = dialog.FileName;
+            SaveSettings();
+            UpdateBackupView();
+        }
+    }
+
+    private async void BackupNowButton_Click(object sender, RoutedEventArgs e) => await RunBackupAsync(scheduled: false);
+
+    private async Task CheckScheduledBackupAsync()
+    {
+        int hours = _settings.BackupIntervalHours;
+        if (hours <= 0 || _backupRunning || _closed || !PathsValid)
+        {
+            return;
+        }
+
+        DateTime due = (_settings.LastBackupUtc ?? DateTime.MinValue).AddHours(hours);
+
+        // After a failure, wait 15 minutes before trying again instead of every 30 seconds.
+        if (DateTime.UtcNow < due || DateTime.UtcNow < _lastBackupFailureUtc.AddMinutes(15))
+        {
+            return;
+        }
+
+        // MySQL not up (for example the PC just started): try again on the next tick.
+        if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port)
+            && !await DatabaseWaiter.WaitAsync(host, port, TimeSpan.FromSeconds(2), _lifetime.Token))
+        {
+            return;
+        }
+
+        await RunBackupAsync(scheduled: true);
+    }
+
+    private async Task RunBackupAsync(bool scheduled)
+    {
+        if (_backupRunning || _closed)
+        {
+            return;
+        }
+
+        string? problem = null;
+        var databases = new List<DatabaseInfo>();
+        string? mysqldump = DatabaseBackup.FindMysqldump(_mySql, _settings.MysqldumpPath);
+
+        if (!PathsValid)
+        {
+            problem = "Escolha a pasta do servidor primeiro.";
+        }
+        else if (mysqldump is null)
+        {
+            problem = "Não encontrei o mysqldump.exe. Clique em \"Escolher mysqldump...\".";
+        }
+        else
+        {
+            foreach ((bool selected, string setting) in new[]
+                     {
+                         (_settings.BackupAuth, "LoginDatabaseInfo"),
+                         (_settings.BackupCharacters, "CharacterDatabaseInfo"),
+                         (_settings.BackupWorld, "WorldDatabaseInfo"),
+                     })
+            {
+                if (!selected)
+                {
+                    continue;
+                }
+
+                DatabaseInfo? info = DatabaseInfo.Read(_settings.WorldserverPath, setting);
+                if (info is null)
+                {
+                    problem = $"Não encontrei o {setting} no worldserver.conf.";
+                    break;
+                }
+
+                databases.Add(info);
+            }
+
+            if (problem is null && databases.Count == 0)
+            {
+                problem = "Marque pelo menos um banco de dados.";
+            }
+        }
+
+        if (problem is not null)
+        {
+            ReportBackupFailure(problem, scheduled);
+            return;
+        }
+
+        _backupRunning = true;
+        BackupNowButton.IsEnabled = false;
+        string names = string.Join(", ", databases.Select(d => d.Database));
+        BackupStatusText.Text = $"Fazendo backup de {names}...";
+        _worldLog.Append($"[Painel] Backup {(scheduled ? "automático" : "manual")} de {names}...", false);
+
+        try
+        {
+            BackupResult result = await DatabaseBackup.RunAsync(mysqldump!, databases, BackupFolderPath,
+                _settings.BackupKeep, _lifetime.Token);
+
+            _settings.LastBackupUtc = DateTime.UtcNow;
+            SaveSettings();
+
+            string size = new BackupFile(result.ZipPath, DateTime.Now, result.Bytes).SizeText;
+            _worldLog.Append($"[Painel] Backup salvo: {result.ZipPath} ({size}, " +
+                $"{result.Duration.TotalSeconds:0.0}s).", false);
+
+            if (scheduled || !IsVisible)
+            {
+                _tray.ShowNotification("Backup concluído", $"{Path.GetFileName(result.ZipPath)} ({size})", false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            ReportBackupFailure(ex.Message, scheduled);
+        }
+        finally
+        {
+            _backupRunning = false;
+            BackupNowButton.IsEnabled = true;
+            UpdateBackupView();
+        }
+    }
+
+    private void ReportBackupFailure(string message, bool scheduled)
+    {
+        _lastBackupFailureUtc = DateTime.UtcNow;
+        _worldLog.Append("[Painel] O backup falhou: " + message, true);
+
+        if (scheduled)
+        {
+            _tray.ShowNotification("Backup falhou", message, true);
+        }
+        else
+        {
+            ShowMessage("O backup falhou:\n\n" + message, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        UpdateBackupView();
+    }
+
+    private void UpdateBackupView()
+    {
+        if (_settings is null || _backupRunning)
+        {
+            return;
+        }
+
+        BackupFolderBox.Text = BackupFolderPath;
+
+        string? mysqldump = DatabaseBackup.FindMysqldump(_mySql, _settings.MysqldumpPath);
+        MysqldumpText.Text = mysqldump is null ? "mysqldump: não encontrado" : $"mysqldump: {mysqldump}";
+        ChooseMysqldumpButton.Visibility = mysqldump is null || !string.IsNullOrEmpty(_settings.MysqldumpPath)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        string last = _settings.LastBackupUtc is DateTime lastUtc
+            ? $"Último backup: {lastUtc.ToLocalTime():dd/MM/yyyy HH:mm}."
+            : "Nenhum backup feito ainda.";
+
+        string next;
+        if (_settings.BackupIntervalHours <= 0)
+        {
+            next = "Backup automático desligado.";
+        }
+        else
+        {
+            DateTime due = (_settings.LastBackupUtc ?? DateTime.UtcNow).AddHours(_settings.BackupIntervalHours);
+            next = due <= DateTime.UtcNow
+                ? "Próximo backup automático: em instantes."
+                : $"Próximo backup automático: {due.ToLocalTime():dd/MM/yyyy HH:mm}.";
+        }
+
+        BackupStatusText.Text = $"{last} {next}";
+        BackupsGrid.ItemsSource = DatabaseBackup.List(BackupFolderPath);
     }
 
     private async void RefreshPlayersButton_Click(object sender, RoutedEventArgs e) => await RefreshPlayersAsync();

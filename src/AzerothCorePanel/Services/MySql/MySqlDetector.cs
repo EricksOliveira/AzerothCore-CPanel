@@ -56,7 +56,7 @@ public static class MySqlDetector
 
     private static ServiceMySqlController? FindService()
     {
-        var candidates = new List<string>();
+        var candidates = new List<(string Name, string? Exe)>();
 
         try
         {
@@ -72,7 +72,7 @@ public static class MySqlDetector
                 if (service?.GetValue("ImagePath") is string imagePath
                     && ServerExeNames.Any(exe => imagePath.Contains(exe, StringComparison.OrdinalIgnoreCase)))
                 {
-                    candidates.Add(name);
+                    candidates.Add((name, ExecutableFromImagePath(imagePath)));
                 }
             }
         }
@@ -81,10 +81,38 @@ public static class MySqlDetector
             return null;
         }
 
-        // With several installs, prefer the one that is running.
-        string? chosen = candidates.FirstOrDefault(name => WindowsService.GetState(name) == ServiceState.Running)
-            ?? candidates.FirstOrDefault();
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
 
-        return chosen is null ? null : new ServiceMySqlController(chosen);
+        // With several installs, prefer the one that is running.
+        (string chosenName, string? chosenExe) = candidates
+            .Where(c => WindowsService.GetState(c.Name) == ServiceState.Running)
+            .DefaultIfEmpty(candidates[0])
+            .First();
+
+        return new ServiceMySqlController(chosenName, chosenExe);
+    }
+
+    /// <summary>ImagePath looks like "C:\...\bin\mysqld.exe" --defaults-file="..." MySQL80.</summary>
+    private static string? ExecutableFromImagePath(string imagePath)
+    {
+        string path = imagePath.Trim();
+        if (path.StartsWith('"'))
+        {
+            int end = path.IndexOf('"', 1);
+            path = end > 0 ? path[1..end] : path.Trim('"');
+        }
+        else
+        {
+            int exe = path.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+            if (exe > 0)
+            {
+                path = path[..(exe + 4)];
+            }
+        }
+
+        return File.Exists(path) ? path : null;
     }
 }

@@ -47,6 +47,27 @@ public sealed class PanelSettings
     /// <summary>SOAP password encrypted with DPAPI for the current Windows user (see SecretProtector).</summary>
     public string SoapPasswordProtected { get; set; } = string.Empty;
 
+    /// <summary>Where backup zips go; empty means "Backups" inside the server folder.</summary>
+    public string BackupFolder { get; set; } = string.Empty;
+
+    public bool BackupAuth { get; set; } = true;
+
+    public bool BackupCharacters { get; set; } = true;
+
+    /// <summary>Off by default: the world database is large and can be rebuilt from AzerothCore's SQL files.</summary>
+    public bool BackupWorld { get; set; }
+
+    /// <summary>Hours between automatic backups; 0 turns the schedule off.</summary>
+    public int BackupIntervalHours { get; set; }
+
+    /// <summary>How many backup zips to keep; older ones are deleted.</summary>
+    public int BackupKeep { get; set; } = 10;
+
+    public DateTime? LastBackupUtc { get; set; }
+
+    /// <summary>mysqldump.exe chosen by hand, when it is not found automatically.</summary>
+    public string MysqldumpPath { get; set; } = string.Empty;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 

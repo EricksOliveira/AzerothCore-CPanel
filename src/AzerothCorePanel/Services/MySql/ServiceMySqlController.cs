@@ -5,12 +5,16 @@ public sealed class ServiceMySqlController : IMySqlController
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(90);
 
-    public ServiceMySqlController(string serviceName)
+    public ServiceMySqlController(string serviceName, string? executablePath = null)
     {
         ServiceName = serviceName;
+        ExecutablePath = executablePath;
     }
 
     public string ServiceName { get; }
+
+    /// <summary>The service's mysqld.exe / mariadbd.exe, when it could be read from the registry.</summary>
+    public string? ExecutablePath { get; }
 
     public string Description => $"serviço {ServiceName}";
 
