@@ -30,11 +30,17 @@ public sealed class ServerProcess
         OutputEncoding = Encoding.GetEncoding((int)GetOEMCP());
     }
 
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(1);
+
     private readonly JobObject _job;
     private readonly object _lock = new();
+    private readonly object _stdinLock = new();
     private Process? _process;
     private TaskCompletionSource<int>? _exitTcs;
+    private LogFileTailer? _tailer;
+    private Timer? _heartbeat;
     private bool _stopRequested;
+    private volatile bool _useConsoleOutput = true;
 
     internal ServerProcess(string name, JobObject job, string? shutdownCommand, string? readyMarker)
     {
@@ -58,6 +64,18 @@ public sealed class ServerProcess
     /// Text in the console output that means the server finished loading. Null means it is ready at once.
     /// </summary>
     public string? ReadyMarker { get; }
+
+    /// <summary>
+    /// When set, logs are read from the log file named in this .conf instead of the console. Used for
+    /// authserver: it has no console input, so its buffered console output would only show up when it exits.
+    /// </summary>
+    internal string? LogFileConf { get; init; }
+
+    /// <summary>
+    /// Sends an empty line to the console every second. The worldserver console loop flushes stdout each
+    /// time it reads a line, so this makes buffered logs show up within a second; empty lines are ignored.
+    /// </summary>
+    internal bool SendFlushHeartbeat { get; init; }
 
     public ServerState State { get; private set; } = ServerState.Stopped;
 
@@ -113,9 +131,12 @@ public sealed class ServerProcess
             StandardErrorEncoding = OutputEncoding,
         };
 
+        LogFileInfo? logFile = LogFileConf is null ? null : LogFileLocator.Find(ExePath, LogFileConf);
+        _useConsoleOutput = logFile is null;
+
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-        process.OutputDataReceived += (_, e) => OnOutput(e.Data, false);
-        process.ErrorDataReceived += (_, e) => OnOutput(e.Data, true);
+        process.OutputDataReceived += (_, e) => OnConsoleOutput(e.Data, false);
+        process.ErrorDataReceived += (_, e) => OnConsoleOutput(e.Data, true);
         process.Exited += OnProcessExited;
 
         lock (_lock)
@@ -126,6 +147,7 @@ public sealed class ServerProcess
         }
 
         SetState(ServerState.Starting);
+        DateTime startUtc = DateTime.UtcNow;
 
         try
         {
@@ -153,10 +175,27 @@ public sealed class ServerProcess
         }
 
         StartedAt = DateTime.Now;
+
+        // The console streams are always read, even when logs come from the file: a full pipe would block the server.
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
         Report($"{Name} iniciado (PID {process.Id}).", false);
+
+        lock (_lock)
+        {
+            if (logFile is not null)
+            {
+                Report($"Lendo os logs de {logFile.Path}", false);
+                _tailer = new LogFileTailer(logFile.Path, startUtc, logFile.TruncatedOnStart,
+                    line => OnOutput(line, false));
+            }
+
+            if (SendFlushHeartbeat)
+            {
+                _heartbeat = new Timer(_ => SendHeartbeat(), null, HeartbeatInterval, HeartbeatInterval);
+            }
+        }
 
         if (ReadyMarker is null)
         {
@@ -172,8 +211,34 @@ public sealed class ServerProcess
             throw new InvalidOperationException($"{Name} não está rodando.");
         }
 
-        process.StandardInput.WriteLine(command);
-        process.StandardInput.Flush();
+        WriteInput(process, command + "\n");
+    }
+
+    private void SendHeartbeat()
+    {
+        Process? process = _process;
+        if (process is null || State != ServerState.Running)
+        {
+            return;
+        }
+
+        try
+        {
+            WriteInput(process, "\n");
+        }
+        catch (Exception)
+        {
+            // The process is exiting and its input pipe is closed.
+        }
+    }
+
+    private void WriteInput(Process process, string text)
+    {
+        lock (_stdinLock)
+        {
+            process.StandardInput.Write(text);
+            process.StandardInput.Flush();
+        }
     }
 
     /// <summary>
@@ -230,6 +295,14 @@ public sealed class ServerProcess
         await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromSeconds(10)));
     }
 
+    private void OnConsoleOutput(string? line, bool isError)
+    {
+        if (_useConsoleOutput)
+        {
+            OnOutput(line, isError);
+        }
+    }
+
     private void OnOutput(string? line, bool isError)
     {
         if (line is null)
@@ -264,6 +337,8 @@ public sealed class ServerProcess
 
         bool stopRequested;
         TaskCompletionSource<int>? exitTcs;
+        LogFileTailer? tailer;
+        Timer? heartbeat;
 
         lock (_lock)
         {
@@ -275,12 +350,20 @@ public sealed class ServerProcess
 
             stopRequested = _stopRequested;
             exitTcs = _exitTcs;
+            tailer = _tailer;
+            heartbeat = _heartbeat;
             _process = null;
+            _tailer = null;
+            _heartbeat = null;
         }
 
+        heartbeat?.Dispose();
+        tailer?.Dispose();
         process.Dispose();
         StartedAt = null;
-        Report($"{Name} encerrado (código de saída {exitCode}).", !stopRequested && exitCode != 0);
+
+        bool unexpected = !stopRequested && exitCode != 0 && exitCode != ServerManager.RestartExitCode;
+        Report($"{Name} encerrado (código de saída {exitCode}).", unexpected);
         SetState(ServerState.Stopped);
         exitTcs?.TrySetResult(exitCode);
         Exited?.Invoke(this, exitCode, stopRequested);

@@ -17,11 +17,17 @@ public sealed class ServerManager : IDisposable
 
     public ServerManager()
     {
-        Auth = new ServerProcess("Authserver", _job, shutdownCommand: null, readyMarker: null);
+        Auth = new ServerProcess("Authserver", _job, shutdownCommand: null, readyMarker: null)
+        {
+            LogFileConf = "authserver.conf",
+        };
 
         // "server shutdown 0" is rejected by AzerothCore (the delay must be > 0).
         World = new ServerProcess("Worldserver", _job, shutdownCommand: "server shutdown 1",
-            readyMarker: "(worldserver-daemon) ready...");
+            readyMarker: "(worldserver-daemon) ready...")
+        {
+            SendFlushHeartbeat = true,
+        };
 
         World.Exited += OnWorldExited;
     }
