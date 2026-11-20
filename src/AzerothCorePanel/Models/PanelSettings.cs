@@ -32,6 +32,12 @@ public sealed class PanelSettings
     /// <summary>Minimizing the window hides it in the notification area instead of the taskbar.</summary>
     public bool MinimizeToTray { get; set; } = true;
 
+    /// <summary>When the panel is opened by Windows at sign-in, start the servers too.</summary>
+    public bool StartServersOnAutostart { get; set; }
+
+    /// <summary>How long to wait for MySQL to accept connections before starting the servers at sign-in.</summary>
+    public int MySqlWaitSeconds { get; set; } = 180;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 

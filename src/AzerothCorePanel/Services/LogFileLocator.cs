@@ -16,19 +16,14 @@ public static class LogFileLocator
     public static LogFileInfo? Find(string exePath, string confFileName)
     {
         string exeDir = Path.GetDirectoryName(exePath)!;
-        string? confPath = new[]
-            {
-                Path.Combine(exeDir, "configs", confFileName),
-                Path.Combine(exeDir, confFileName),
-            }
-            .FirstOrDefault(File.Exists);
+        string? confPath = ConfFile.Find(exePath, confFileName);
 
         if (confPath is null)
         {
             return null;
         }
 
-        Dictionary<string, string> values = ReadConf(confPath);
+        Dictionary<string, string> values = ConfFile.Read(confPath);
 
         if (!values.TryGetValue("Logger.root", out string? rootLogger))
         {
@@ -71,31 +66,5 @@ public static class LogFileLocator
         }
 
         return null;
-    }
-
-    private static Dictionary<string, string> ReadConf(string path)
-    {
-        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (string rawLine in File.ReadLines(path))
-        {
-            string line = rawLine.Trim();
-            if (line.Length == 0 || line[0] == '#' || line[0] == '[')
-            {
-                continue;
-            }
-
-            int equals = line.IndexOf('=');
-            if (equals <= 0)
-            {
-                continue;
-            }
-
-            string key = line[..equals].Trim();
-            string value = line[(equals + 1)..].Trim().Trim('"');
-            values[key] = value;
-        }
-
-        return values;
     }
 }

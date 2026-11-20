@@ -31,10 +31,11 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Auto-restart em caso de crash, com limite de tentativas para não ficar em loop
 - [x] Ícone na bandeja do sistema: minimiza para perto do relógio, menu com Start/Stop/Restart e avisos quando
   um servidor cai
+- [x] Iniciar o painel com o Windows (já na bandeja), com opção de iniciar os servidores depois que o MySQL
+  estiver pronto
 
 ### Próximas versões
 - [ ] Iniciar e parar o MySQL do Repack
-- [ ] Opção de iniciar junto com o Windows
 - [ ] Uptime, uso de CPU e RAM de cada processo
 - [ ] Jogadores online
 - [ ] Console para enviar comandos GM (via SOAP)
@@ -63,6 +64,11 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   minimizar tira o painel da barra de tarefas. Quando um servidor cai, aparece uma notificação. No Windows 11 o
   ícone começa na área de ícones ocultos (a seta ^ ao lado do relógio); arraste-o para a barra para deixá-lo
   sempre visível.
+- **Iniciar com o Windows**: com **Iniciar o painel com o Windows** ligado, o painel abre sozinho quando você entra
+  no Windows, direto na bandeja. Com **E iniciar os servidores**, ele espera o MySQL aceitar conexões (até 3
+  minutos, lendo o endereço do `LoginDatabaseInfo` no `worldserver.conf`) e inicia os servidores. A opção usa a
+  chave `Run` do registro do seu usuário, sem precisar de administrador.
+- Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
 ## Como compilar

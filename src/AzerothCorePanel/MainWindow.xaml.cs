@@ -21,9 +21,12 @@ public partial class MainWindow : Window
     private readonly LogPane _authLog;
     private readonly LogPane _worldLog;
     private readonly DispatcherTimer _uiTimer;
+    private readonly CancellationTokenSource _lifetime = new();
     private bool _busy;
     private bool _closeConfirmed;
+    private bool _closed;
     private bool _trayHintShown;
+    private bool _updatingStartupCheck;
 
     public MainWindow()
     {
@@ -44,6 +47,8 @@ public partial class MainWindow : Window
             $"Depois de {_manager.CrashRestartLimit} quedas em {_manager.CrashRestartWindow.TotalMinutes:0} " +
             "minutos o painel desiste, para não ficar em loop.";
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
+        LoadStartWithWindows();
+        StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
         ApplyPaths();
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
@@ -78,6 +83,98 @@ public partial class MainWindow : Window
     }
 
     private bool PathsValid => File.Exists(_settings.AuthserverPath) && File.Exists(_settings.WorldserverPath);
+
+    /// <summary>Shows the window, or keeps it in the tray when Windows opened the panel at sign-in.</summary>
+    internal void ShowForLaunch(bool launchedAtStartup)
+    {
+        if (!launchedAtStartup)
+        {
+            Show();
+            return;
+        }
+
+        if (_settings.MinimizeToTray)
+        {
+            // The window is first shown when the tray icon is clicked.
+            _trayHintShown = true;
+            _tray.ShowNotification("AzerothCore CPanel", "Iniciado com o Windows. Clique no ícone para abrir.", false);
+        }
+        else
+        {
+            WindowState = WindowState.Minimized;
+            Show();
+        }
+
+        if (_settings.StartServersOnAutostart)
+        {
+            _ = StartServersAtSignInAsync();
+        }
+    }
+
+    private async Task StartServersAtSignInAsync()
+    {
+        if (!PathsValid)
+        {
+            _worldLog.Append("[Painel] Os servidores não foram iniciados: escolha a pasta do servidor.", true);
+            _tray.ShowNotification("Servidores não iniciados", "Abra o painel e escolha a pasta do servidor.", true);
+            return;
+        }
+
+        if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port))
+        {
+            var timeout = TimeSpan.FromSeconds(Math.Max(10, _settings.MySqlWaitSeconds));
+            _worldLog.Append($"[Painel] Aguardando o MySQL em {host}:{port} (até {timeout.TotalSeconds:0}s)...", false);
+
+            bool ready;
+            try
+            {
+                ready = await DatabaseWaiter.WaitAsync(host, port, timeout, _lifetime.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (!ready)
+            {
+                _worldLog.Append($"[Painel] O MySQL não respondeu em {timeout.TotalSeconds:0}s; " +
+                    "os servidores não foram iniciados.", true);
+                _tray.ShowNotification("MySQL não respondeu",
+                    "Os servidores não foram iniciados. Abra o painel e clique em Start.", true);
+                return;
+            }
+        }
+
+        // The panel may have been closed, or the servers started by hand, while waiting.
+        if (_closed || _manager.AnyRunning)
+        {
+            return;
+        }
+
+        _worldLog.Append("[Painel] Iniciando os servidores (painel aberto com o Windows).", false);
+        StartServers();
+    }
+
+    private void LoadStartWithWindows()
+    {
+        _updatingStartupCheck = true;
+        try
+        {
+            // The registry is the source of truth; refresh it in case the panel exe was moved.
+            WindowsStartup.RefreshPath();
+            StartWithWindowsCheck.IsChecked = WindowsStartup.IsEnabled();
+        }
+        catch (Exception)
+        {
+            StartWithWindowsCheck.IsChecked = false;
+        }
+        finally
+        {
+            _updatingStartupCheck = false;
+        }
+
+        StartServersOnAutostartCheck.IsEnabled = StartWithWindowsCheck.IsChecked == true;
+    }
 
     private void ApplyPaths()
     {
@@ -268,6 +365,48 @@ public partial class MainWindow : Window
         }
     }
 
+    private void StartWithWindowsCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settings is null || _updatingStartupCheck)
+        {
+            return;
+        }
+
+        bool enabled = StartWithWindowsCheck.IsChecked == true;
+        try
+        {
+            if (enabled)
+            {
+                WindowsStartup.Enable();
+            }
+            else
+            {
+                WindowsStartup.Disable();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível mudar a opção de iniciar com o Windows", ex);
+        }
+
+        LoadStartWithWindows();
+    }
+
+    private void StartServersOnAutostartCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settings is null)
+        {
+            return;
+        }
+
+        bool enabled = StartServersOnAutostartCheck.IsChecked == true;
+        if (_settings.StartServersOnAutostart != enabled)
+        {
+            _settings.StartServersOnAutostart = enabled;
+            SaveSettings();
+        }
+    }
+
     private void ClearLogsButton_Click(object sender, RoutedEventArgs e)
     {
         _authLog.Clear();
@@ -291,8 +430,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RestoreFromTray()
+    internal void RestoreFromTray()
     {
+        if (_closed)
+        {
+            return;
+        }
+
         Show();
         if (WindowState == WindowState.Minimized)
         {
@@ -345,6 +489,8 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _closed = true;
+        _lifetime.Cancel();
         _uiTimer.Stop();
         _tray.Dispose();
         _manager.Dispose();
