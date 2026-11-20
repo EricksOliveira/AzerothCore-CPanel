@@ -6,7 +6,7 @@ Painel de controle para Windows feito para servidores [AzerothCore](https://www.
 (World of Warcraft 3.3.5a). Em vez de abrir o `authserver.exe` e o `worldserver.exe` na mão,
 o painel cuida disso com um clique.
 
-> **Status:** primeira versão (MVP) disponível.
+> **Status:** versão 1.0 disponível.
 
 ## Download
 
@@ -19,7 +19,7 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 
 ## Funcionalidades
 
-### MVP
+### Pronto
 - [x] Escolher a pasta da Build ou do Repack; o painel encontra o `authserver.exe` e o `worldserver.exe`
 - [x] **Start**: inicia o Authserver e depois o Worldserver
 - [x] **Stop**: desligamento limpo (`server shutdown 1`), sem perder dados dos personagens
