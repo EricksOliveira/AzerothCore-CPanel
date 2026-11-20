@@ -4,7 +4,16 @@ Painel de controle para Windows feito para servidores [AzerothCore](https://www.
 (World of Warcraft 3.3.5a). Em vez de abrir o `authserver.exe` e o `worldserver.exe` na mão,
 o painel cuida disso com um clique.
 
-> **Status:** MVP em desenvolvimento. Ainda não há uma versão para baixar.
+> **Status:** primeira versão (MVP) disponível.
+
+## Download
+
+Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).
+É um arquivo único e não precisa instalar o .NET.
+
+1. Abra o `AzerothCorePanel.exe`
+2. Clique em **Procurar...** e escolha a pasta da Build ou do Repack
+3. Clique em **Start**
 
 ## Funcionalidades
 
