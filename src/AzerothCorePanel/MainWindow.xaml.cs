@@ -32,6 +32,15 @@ public partial class MainWindow : Window
 
         _settings = PanelSettings.Load();
         _manager.ShutdownTimeout = TimeSpan.FromSeconds(Math.Max(5, _settings.ShutdownTimeoutSeconds));
+        _manager.AutoRestartOnCrash = _settings.AutoRestartOnCrash;
+        _manager.CrashRestartDelay = TimeSpan.FromSeconds(Math.Max(1, _settings.CrashRestartDelaySeconds));
+        _manager.CrashRestartLimit = Math.Max(1, _settings.CrashRestartLimit);
+        _manager.CrashRestartWindow = TimeSpan.FromMinutes(Math.Max(1, _settings.CrashRestartWindowMinutes));
+        AutoRestartCheck.IsChecked = _settings.AutoRestartOnCrash;
+        AutoRestartCheck.ToolTip =
+            $"Se um servidor cair, ele é iniciado de novo em {_manager.CrashRestartDelay.TotalSeconds:0}s. " +
+            $"Depois de {_manager.CrashRestartLimit} quedas em {_manager.CrashRestartWindow.TotalMinutes:0} " +
+            "minutos o painel desiste, para não ficar em loop.";
         ApplyPaths();
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
@@ -45,7 +54,7 @@ public partial class MainWindow : Window
         {
             _authLog.Flush();
             _worldLog.Flush();
-            UpdateStatus();
+            UpdateUi();
         };
         _uiTimer.Start();
 
@@ -193,6 +202,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AutoRestartCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        // The handler can run during InitializeComponent, before the settings are loaded.
+        if (_settings is null)
+        {
+            return;
+        }
+
+        bool enabled = AutoRestartCheck.IsChecked == true;
+        _manager.AutoRestartOnCrash = enabled;
+
+        if (_settings.AutoRestartOnCrash != enabled)
+        {
+            _settings.AutoRestartOnCrash = enabled;
+            SaveSettings();
+        }
+    }
+
     private void ClearLogsButton_Click(object sender, RoutedEventArgs e)
     {
         _authLog.Clear();
@@ -259,11 +286,12 @@ public partial class MainWindow : Window
     private void UpdateUi()
     {
         bool anyRunning = _manager.AnyRunning;
+        bool active = anyRunning || _manager.AnyRestartPending;
 
         StartButton.IsEnabled = !_busy && PathsValid && !_manager.AllRunning;
-        StopButton.IsEnabled = !_busy && anyRunning;
-        RestartButton.IsEnabled = !_busy && PathsValid && anyRunning;
-        BrowseButton.IsEnabled = !_busy && !anyRunning;
+        StopButton.IsEnabled = !_busy && active;
+        RestartButton.IsEnabled = !_busy && PathsValid && active;
+        BrowseButton.IsEnabled = !_busy && !active;
 
         bool canSend = _manager.World.State == ServerState.Running;
         CommandBox.IsEnabled = canSend;
@@ -278,13 +306,14 @@ public partial class MainWindow : Window
         ShowState(_manager.World, WorldDot, WorldStatusText);
     }
 
-    private static void ShowState(ServerProcess server, Ellipse dot, TextBlock text)
+    private void ShowState(ServerProcess server, Ellipse dot, TextBlock text)
     {
         (Brush color, string label) = server.State switch
         {
             ServerState.Starting => (Brushes.Orange, "Iniciando..."),
             ServerState.Running => (Brushes.LimeGreen, "Online"),
             ServerState.Stopping => (Brushes.Orange, "Parando..."),
+            _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, "Caiu, reiniciando..."),
             _ => (Brushes.Gray, "Parado"),
         };
 

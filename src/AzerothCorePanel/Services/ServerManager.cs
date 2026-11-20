@@ -4,7 +4,7 @@ using System.IO;
 namespace AzerothCorePanel.Services;
 
 /// <summary>
-/// Starts, stops and restarts authserver and worldserver together.
+/// Starts, stops and restarts authserver and worldserver together, and restarts a server that crashed.
 /// </summary>
 public sealed class ServerManager : IDisposable
 {
@@ -14,6 +14,10 @@ public sealed class ServerManager : IDisposable
     public const int RestartExitCode = 2;
 
     private readonly JobObject _job = new();
+    private readonly object _restartLock = new();
+    private readonly Dictionary<ServerProcess, List<DateTime>> _crashRestarts = new();
+    private readonly Dictionary<ServerProcess, CancellationTokenSource> _pendingRestarts = new();
+    private bool _disposed;
 
     public ServerManager()
     {
@@ -29,7 +33,8 @@ public sealed class ServerManager : IDisposable
             SendFlushHeartbeat = true,
         };
 
-        World.Exited += OnWorldExited;
+        Auth.Exited += OnServerExited;
+        World.Exited += OnServerExited;
     }
 
     public ServerProcess Auth { get; }
@@ -38,9 +43,42 @@ public sealed class ServerManager : IDisposable
 
     public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(60);
 
+    /// <summary>Restart a server that closed without being asked to.</summary>
+    public bool AutoRestartOnCrash { get; set; } = true;
+
+    /// <summary>How long to wait after a crash before starting the server again.</summary>
+    public TimeSpan CrashRestartDelay { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// At most this many crash restarts per server within <see cref="CrashRestartWindow"/>; after that the
+    /// panel gives up, so a broken config or a database that is down does not cause an endless loop.
+    /// </summary>
+    public int CrashRestartLimit { get; set; } = 3;
+
+    public TimeSpan CrashRestartWindow { get; set; } = TimeSpan.FromMinutes(5);
+
     public bool AnyRunning => Auth.IsRunning || World.IsRunning;
 
     public bool AllRunning => Auth.IsRunning && World.IsRunning;
+
+    public bool AnyRestartPending
+    {
+        get
+        {
+            lock (_restartLock)
+            {
+                return _pendingRestarts.Count > 0;
+            }
+        }
+    }
+
+    public bool IsRestartPending(ServerProcess server)
+    {
+        lock (_restartLock)
+        {
+            return _pendingRestarts.ContainsKey(server);
+        }
+    }
 
     /// <summary>
     /// Returns the names of AzerothCore processes already running that this panel did not start.
@@ -75,6 +113,8 @@ public sealed class ServerManager : IDisposable
     /// <summary>Starts whichever servers are not running yet: authserver first, then worldserver.</summary>
     public void StartAll()
     {
+        // A manual start replaces any pending crash restart and gives the servers a fresh restart budget.
+        CancelPendingRestarts(clearHistory: true);
         Auth.Start();
         World.Start();
     }
@@ -82,6 +122,7 @@ public sealed class ServerManager : IDisposable
     /// <summary>Stops worldserver first (so players are saved), then authserver.</summary>
     public async Task StopAllAsync()
     {
+        CancelPendingRestarts(clearHistory: true);
         await World.StopAsync(ShutdownTimeout);
         await Auth.StopAsync(ShutdownTimeout);
     }
@@ -92,31 +133,159 @@ public sealed class ServerManager : IDisposable
         StartAll();
     }
 
-    public void Dispose() => _job.Dispose();
+    public void Dispose()
+    {
+        lock (_restartLock)
+        {
+            _disposed = true;
+        }
 
-    private void OnWorldExited(ServerProcess world, int exitCode, bool stopRequested)
+        CancelPendingRestarts(clearHistory: true);
+        _job.Dispose();
+    }
+
+    private void OnServerExited(ServerProcess server, int exitCode, bool stopRequested)
     {
         if (stopRequested)
         {
             return;
         }
 
-        if (exitCode == RestartExitCode)
+        if (server == World && exitCode == RestartExitCode)
         {
             // Someone ran "server restart" in-game or in the console.
-            world.Report("Restart pedido pelo próprio worldserver; iniciando novamente...", false);
-            try
+            server.Report("Restart pedido pelo próprio worldserver; iniciando novamente...", false);
+            TryStart(server);
+            return;
+        }
+
+        if (exitCode == ShutdownExitCode)
+        {
+            // A normal shutdown asked from inside the game or the console ("server shutdown").
+            server.Report($"{server.Name} foi desligado por um comando; não será reiniciado.", false);
+            return;
+        }
+
+        string code = FormatExitCode(exitCode);
+
+        if (!AutoRestartOnCrash)
+        {
+            server.Report($"{server.Name} caiu (código {code}). O reinício automático está desligado.", true);
+            return;
+        }
+
+        CancellationTokenSource cts;
+        int attempt;
+
+        lock (_restartLock)
+        {
+            if (_disposed)
             {
-                world.Start();
+                return;
             }
-            catch (Exception ex)
+
+            DateTime now = DateTime.Now;
+            if (!_crashRestarts.TryGetValue(server, out List<DateTime>? history))
             {
-                world.Report($"Falha ao reiniciar: {ex.Message}", true);
+                history = new List<DateTime>();
+                _crashRestarts[server] = history;
+            }
+
+            history.RemoveAll(time => now - time > CrashRestartWindow);
+
+            if (history.Count >= CrashRestartLimit)
+            {
+                history.Clear();
+                server.Report(
+                    $"{server.Name} caiu (código {code}) {CrashRestartLimit + 1} vezes em " +
+                    $"{CrashRestartWindow.TotalMinutes:0} minutos. Reinício automático cancelado; " +
+                    "veja o Errors.log e os logs acima.", true);
+                return;
+            }
+
+            history.Add(now);
+            attempt = history.Count;
+
+            cts = new CancellationTokenSource();
+            _pendingRestarts[server] = cts;
+        }
+
+        server.Report(
+            $"{server.Name} caiu (código {code}). Reiniciando em {CrashRestartDelay.TotalSeconds:0}s " +
+            $"(tentativa {attempt} de {CrashRestartLimit})...", true);
+
+        _ = RestartAfterDelayAsync(server, cts);
+    }
+
+    private async Task RestartAfterDelayAsync(ServerProcess server, CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(CrashRestartDelay, cts.Token);
+
+            // On startup authserver marks every realm offline and refuses to start when no realm is left
+            // (realmlist flag 3). A worldserver that is still loading has the version-mismatch flag set, so
+            // starting authserver now would fail again; wait until worldserver finished loading.
+            if (server == Auth && World.State == ServerState.Starting)
+            {
+                server.Report("Aguardando o worldserver terminar de carregar para iniciar o authserver...", false);
+                while (World.State == ServerState.Starting)
+                {
+                    await Task.Delay(500, cts.Token);
+                }
             }
         }
-        else if (exitCode != ShutdownExitCode)
+        catch (OperationCanceledException)
         {
-            world.Report("O worldserver fechou inesperadamente. Veja o Errors.log e os logs acima.", true);
+            return;
+        }
+
+        lock (_restartLock)
+        {
+            if (_disposed || !_pendingRestarts.TryGetValue(server, out CancellationTokenSource? current)
+                || current != cts)
+            {
+                return;
+            }
+
+            _pendingRestarts.Remove(server);
+        }
+
+        cts.Dispose();
+        TryStart(server);
+    }
+
+    private void CancelPendingRestarts(bool clearHistory)
+    {
+        lock (_restartLock)
+        {
+            foreach (CancellationTokenSource cts in _pendingRestarts.Values)
+            {
+                cts.Cancel();
+            }
+
+            _pendingRestarts.Clear();
+
+            if (clearHistory)
+            {
+                _crashRestarts.Clear();
+            }
         }
     }
+
+    private static void TryStart(ServerProcess server)
+    {
+        try
+        {
+            server.Start();
+        }
+        catch (Exception ex)
+        {
+            server.Report($"Falha ao reiniciar: {ex.Message}", true);
+        }
+    }
+
+    /// <summary>Windows crash codes (such as 0xC0000005, access violation) read better in hex.</summary>
+    internal static string FormatExitCode(int exitCode) =>
+        exitCode < 0 ? $"0x{(uint)exitCode:X8}" : exitCode.ToString();
 }

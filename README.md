@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="AzerothCore CPanel" width="160"></p>
+
 # AzerothCore CPanel
 
 Painel de controle para Windows feito para servidores [AzerothCore](https://www.azerothcore.org/)
@@ -26,9 +28,9 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Campo para enviar comandos ao console do worldserver
 - [x] Reinicia o worldserver sozinho quando ele pede restart (`server restart`, código de saída 2)
 - [x] Se o painel fechar ou travar, os servidores não ficam rodando escondidos (Job Object)
+- [x] Auto-restart em caso de crash, com limite de tentativas para não ficar em loop
 
 ### Próximas versões
-- [ ] Auto-restart em caso de crash
 - [ ] Iniciar e parar o MySQL do Repack
 - [ ] Ícone na bandeja do sistema e opção de iniciar junto com o Windows
 - [ ] Uptime, uso de CPU e RAM de cada processo
@@ -50,6 +52,10 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   pasta `configs`.
 - **Stop** envia `server shutdown 1` ao worldserver e espera ele fechar (60 segundos por padrão). Se não
   fechar, o processo é encerrado à força. O authserver é encerrado direto, porque não guarda dados de jogo.
+- **Reiniciar servidor se cair** (ligado por padrão): se um servidor fechar sem ninguém pedir, o painel o
+  inicia de novo depois de 5 segundos. Depois de 3 quedas em 5 minutos ele desiste, porque o problema
+  provavelmente é de configuração ou do banco de dados. Um `server shutdown` dado no jogo ou no console não
+  conta como queda.
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
 ## Como compilar
@@ -61,7 +67,8 @@ dotnet build src/AzerothCorePanel
 Para gerar um único `.exe` que roda sem instalar o .NET:
 
 ```powershell
-dotnet publish src/AzerothCorePanel -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+dotnet publish src/AzerothCorePanel -c Release -r win-x64 --self-contained -p:PublishSingleFile=true `
+  -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 ```
 
 ## Licença

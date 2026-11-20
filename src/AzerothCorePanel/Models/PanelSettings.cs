@@ -19,6 +19,16 @@ public sealed class PanelSettings
     /// </summary>
     public int ShutdownTimeoutSeconds { get; set; } = 60;
 
+    /// <summary>Restart a server that closed without being asked to (crash).</summary>
+    public bool AutoRestartOnCrash { get; set; } = true;
+
+    public int CrashRestartDelaySeconds { get; set; } = 5;
+
+    /// <summary>Give up after this many crash restarts within <see cref="CrashRestartWindowMinutes"/>.</summary>
+    public int CrashRestartLimit { get; set; } = 3;
+
+    public int CrashRestartWindowMinutes { get; set; } = 5;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 
