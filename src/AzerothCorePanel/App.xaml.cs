@@ -1,5 +1,7 @@
 using System.Windows;
+using AzerothCorePanel.Models;
 using AzerothCorePanel.Services;
+using AzerothCorePanel.Views;
 
 namespace AzerothCorePanel;
 
@@ -36,6 +38,10 @@ public partial class App : Application
         }
 
         bool launchedAtStartup = e.Args.Contains(WindowsStartup.AutostartArgument, StringComparer.OrdinalIgnoreCase);
+
+        // The theme must be in place before the window is created, so it is drawn with the right colors.
+        ThemeManager.Initialize(this,
+            Enum.TryParse(PanelSettings.Load().Theme, ignoreCase: true, out AppTheme theme) ? theme : AppTheme.System);
 
         var window = new MainWindow();
         MainWindow = window;

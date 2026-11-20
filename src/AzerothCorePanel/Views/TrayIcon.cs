@@ -81,6 +81,26 @@ internal sealed class TrayIcon : IDisposable
         }
     }
 
+    /// <summary>Colors the right-click menu for the dark or light theme.</summary>
+    public void SetDark(bool dark)
+    {
+        Forms.ContextMenuStrip? menu = _icon.ContextMenuStrip;
+        if (menu is null)
+        {
+            return;
+        }
+
+        menu.Renderer = dark
+            ? new Forms.ToolStripProfessionalRenderer(new DarkMenuColors()) { RoundedEdges = false }
+            : new Forms.ToolStripProfessionalRenderer();
+
+        Drawing.Color fore = dark ? Drawing.Color.FromArgb(0xEC, 0xEC, 0xEC) : Drawing.SystemColors.ControlText;
+        foreach (Forms.ToolStripItem item in menu.Items)
+        {
+            item.ForeColor = fore;
+        }
+    }
+
     public void ShowNotification(string title, string message, bool isError) =>
         _icon.ShowBalloonTip(5000, title, message, isError ? Forms.ToolTipIcon.Error : Forms.ToolTipIcon.Info);
 
@@ -90,6 +110,24 @@ internal sealed class TrayIcon : IDisposable
         _icon.ContextMenuStrip?.Dispose();
         _icon.Icon?.Dispose();
         _icon.Dispose();
+    }
+
+    /// <summary>Menu colors matching Themes/Dark.xaml.</summary>
+    private sealed class DarkMenuColors : Forms.ProfessionalColorTable
+    {
+        private static readonly Drawing.Color Background = Drawing.Color.FromArgb(0x2A, 0x2A, 0x2A);
+        private static readonly Drawing.Color Border = Drawing.Color.FromArgb(0x4A, 0x4A, 0x4A);
+        private static readonly Drawing.Color Selected = Drawing.Color.FromArgb(0x2E, 0x4A, 0x66);
+
+        public override Drawing.Color ToolStripDropDownBackground => Background;
+        public override Drawing.Color ImageMarginGradientBegin => Background;
+        public override Drawing.Color ImageMarginGradientMiddle => Background;
+        public override Drawing.Color ImageMarginGradientEnd => Background;
+        public override Drawing.Color MenuBorder => Border;
+        public override Drawing.Color MenuItemBorder => Selected;
+        public override Drawing.Color MenuItemSelected => Selected;
+        public override Drawing.Color SeparatorDark => Border;
+        public override Drawing.Color SeparatorLight => Border;
     }
 
     private static Drawing.Icon LoadIcon()

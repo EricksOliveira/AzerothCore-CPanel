@@ -6,18 +6,22 @@
         Icon="Assets/app.ico"
         Width="1000" Height="720"
         MinWidth="720" MinHeight="480"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}"
         WindowStartupLocation="CenterScreen">
   <Window.Resources>
-    <Style TargetType="Button">
+    <!-- BasedOn keeps the theme's template (Themes/Controls.xaml) and only changes the size here. -->
+    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Padding" Value="14,5" />
       <Setter Property="MinWidth" Value="90" />
     </Style>
-    <Style x:Key="LogBoxStyle" TargetType="TextBox">
+    <Style x:Key="LogBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
       <Setter Property="IsReadOnly" Value="True" />
       <Setter Property="FontFamily" Value="Consolas" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Background" Value="#1E1E1E" />
-      <Setter Property="Foreground" Value="#DCDCDC" />
+      <Setter Property="Background" Value="{DynamicResource LogBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource LogTextBrush}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource LogTextBrush}" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="6" />
       <Setter Property="TextWrapping" Value="NoWrap" />
@@ -54,9 +58,9 @@
                 Content="Procurar..." Click="BrowseButton_Click" />
 
         <TextBlock x:Name="AuthPathText" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,6,0,0"
-                   Foreground="Gray" TextTrimming="CharacterEllipsis" />
+                   Foreground="{DynamicResource SubtleTextBrush}" TextTrimming="CharacterEllipsis" />
         <TextBlock x:Name="WorldPathText" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,2,0,0"
-                   Foreground="Gray" TextTrimming="CharacterEllipsis" />
+                   Foreground="{DynamicResource SubtleTextBrush}" TextTrimming="CharacterEllipsis" />
 
         <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
           <CheckBox x:Name="StartWithWindowsCheck" VerticalAlignment="Center"
@@ -101,7 +105,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextAlignment" Value="Right" />
             <Setter Property="Margin" Value="12,1,0,1" />
-            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
           </Style>
         </Grid.Resources>
 
@@ -180,7 +184,7 @@
       </TabItem>
       <TabItem x:Name="GmTab" Header="Comandos GM">
         <DockPanel>
-          <Border DockPanel.Dock="Top" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1" Padding="0,0,0,8"
+          <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,8"
                   Margin="0,0,0,8">
             <StackPanel>
               <DockPanel>
@@ -281,7 +285,7 @@
             <DockPanel Margin="0,4,0,0">
               <Button x:Name="ChooseMysqldumpButton" DockPanel.Dock="Right" Content="Escolher mysqldump..."
                       Margin="8,0,0,0" Click="ChooseMysqldumpButton_Click" />
-              <TextBlock x:Name="MysqldumpText" Foreground="Gray" VerticalAlignment="Center"
+              <TextBlock x:Name="MysqldumpText" Foreground="{DynamicResource SubtleTextBrush}" VerticalAlignment="Center"
                          TextTrimming="CharacterEllipsis" />
             </DockPanel>
           </StackPanel>
@@ -312,6 +316,13 @@
                 ToolTip="Ao minimizar, o painel sai da barra de tarefas e fica no ícone perto do relógio."
                 Checked="MinimizeToTrayCheck_Changed" Unchecked="MinimizeToTrayCheck_Changed" />
       <Button DockPanel.Dock="Right" Content="Limpar logs" Click="ClearLogsButton_Click" />
+      <ComboBox x:Name="ThemeCombo" DockPanel.Dock="Right" Width="150" Margin="0,0,12,0" VerticalAlignment="Center"
+                SelectionChanged="ThemeCombo_SelectionChanged">
+        <ComboBoxItem Content="Seguir o Windows" Tag="System" />
+        <ComboBoxItem Content="Claro" Tag="Light" />
+        <ComboBoxItem Content="Escuro" Tag="Dark" />
+      </ComboBox>
+      <TextBlock DockPanel.Dock="Right" Text="Tema:" VerticalAlignment="Center" Margin="0,0,6,0" />
       <TextBlock />
     </DockPanel>
   </Grid>

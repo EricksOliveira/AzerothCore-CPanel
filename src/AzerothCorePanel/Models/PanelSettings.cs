@@ -65,6 +65,9 @@ public sealed class PanelSettings
 
     public DateTime? LastBackupUtc { get; set; }
 
+    /// <summary>"System" (follow Windows), "Light" or "Dark".</summary>
+    public string Theme { get; set; } = "System";
+
     /// <summary>mysqldump.exe chosen by hand, when it is not found automatically.</summary>
     public string MysqldumpPath { get; set; } = string.Empty;
 

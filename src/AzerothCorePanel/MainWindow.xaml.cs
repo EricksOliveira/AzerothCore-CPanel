@@ -67,6 +67,12 @@ public partial class MainWindow : Window
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
         StartMySqlWithServersCheck.IsChecked = _settings.StartMySqlWithServers;
         ToolTipService.SetShowOnDisabled(MySqlStopButton, true);
+        ThemeCombo.SelectedItem = ThemeCombo.Items.OfType<ComboBoxItem>()
+            .FirstOrDefault(item => (string)item.Tag == ThemeManager.Selected.ToString()) ?? ThemeCombo.Items[0];
+        ThemeManager.Changed += OnThemeChanged;
+        SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
+        _tray.SetDark(ThemeManager.IsDark);
+
         ConfigEditorView.Ask = ShowMessage;
         ConfigEditorView.Saved += OnConfigSaved;
         SoapUserBox.Text = _settings.SoapUser;
@@ -515,6 +521,27 @@ public partial class MainWindow : Window
         }
 
         LoadStartWithWindows();
+    }
+
+    private void ThemeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_settings is null || ThemeCombo.SelectedItem is not ComboBoxItem { Tag: string tag }
+            || !Enum.TryParse(tag, out AppTheme theme) || theme == ThemeManager.Selected)
+        {
+            return;
+        }
+
+        ThemeManager.Apply(theme);
+        _settings.Theme = tag;
+        SaveSettings();
+    }
+
+    private void OnThemeChanged()
+    {
+        _tray.SetDark(ThemeManager.IsDark);
+
+        // Texts colored from code pick up the new colors.
+        UpdateMetrics();
     }
 
     private void StartMySqlWithServersCheck_Changed(object sender, RoutedEventArgs e)
@@ -1384,14 +1411,16 @@ public partial class MainWindow : Window
             cpuText.Text = "CPU —";
             ramText.Text = "RAM —";
             ramText.ToolTip = null;
-            cpuText.Foreground = ramText.Foreground = Brushes.Gray;
+            cpuText.SetResourceReference(ForegroundProperty, "SubtleTextBrush");
+            ramText.SetResourceReference(ForegroundProperty, "SubtleTextBrush");
             return;
         }
 
         cpuText.Text = m.CpuPercent is double cpu ? $"CPU {cpu:0.0}%" : "CPU …";
         ramText.Text = $"RAM {FormatBytes(m.WorkingSetBytes)}";
         ramText.ToolTip = $"Memória física em uso (working set). Pico desde o início: {FormatBytes(m.PeakWorkingSetBytes)}";
-        cpuText.Foreground = ramText.Foreground = SystemColors.ControlTextBrush;
+        cpuText.SetResourceReference(ForegroundProperty, "TextBrush");
+        ramText.SetResourceReference(ForegroundProperty, "TextBrush");
     }
 
     private static string FormatBytes(long bytes)
