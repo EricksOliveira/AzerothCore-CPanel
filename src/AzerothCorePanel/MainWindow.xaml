@@ -161,6 +161,11 @@
           </DockPanel>
           <DataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                     HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single">
+            <DataGrid.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Expulsar do jogo (kick, via SOAP)" Click="KickPlayerMenu_Click" />
+              </ContextMenu>
+            </DataGrid.ContextMenu>
             <DataGrid.Columns>
               <DataGridTextColumn Header="Nome" Binding="{Binding Name}" Width="2*" />
               <DataGridTextColumn Header="Nível" Binding="{Binding Level}" Width="Auto" />
@@ -170,6 +175,63 @@
               <DataGridTextColumn Header="Mapa" Binding="{Binding MapName}" Width="*" />
             </DataGrid.Columns>
           </DataGrid>
+        </DockPanel>
+      </TabItem>
+      <TabItem x:Name="GmTab" Header="Comandos GM">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1" Padding="0,0,0,8"
+                  Margin="0,0,0,8">
+            <StackPanel>
+              <DockPanel>
+                <Button x:Name="EnableSoapButton" DockPanel.Dock="Right" Margin="8,0,0,0"
+                        Content="Ativar SOAP no worldserver.conf" Click="EnableSoapButton_Click" />
+                <TextBlock x:Name="SoapStatusText" VerticalAlignment="Center" TextWrapping="Wrap" />
+              </DockPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock Text="Conta GM:" VerticalAlignment="Center" />
+                <TextBox x:Name="SoapUserBox" Width="160" Margin="6,0,0,0" Padding="3,2"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Conta do jogo com GM nível 3 (administrador)" />
+                <TextBlock Text="Senha:" VerticalAlignment="Center" Margin="16,0,0,0" />
+                <PasswordBox x:Name="SoapPasswordBox" Width="160" Margin="6,0,0,0" Padding="3,2"
+                             VerticalContentAlignment="Center" />
+                <Button Content="Salvar" Margin="12,0,0,0" Click="SaveSoapButton_Click"
+                        ToolTip="Guarda a conta e a senha (a senha fica criptografada para o seu usuário do Windows)" />
+                <Button Content="Testar" Margin="8,0,0,0" Tag="run:server info" Click="GmQuickButton_Click"
+                        ToolTip="Executa 'server info' pelo SOAP" />
+              </StackPanel>
+              <WrapPanel Margin="0,8,0,0">
+                <WrapPanel.Resources>
+                  <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Setter Property="Margin" Value="0,0,8,4" />
+                    <Setter Property="Padding" Value="10,3" />
+                    <Setter Property="MinWidth" Value="0" />
+                  </Style>
+                </WrapPanel.Resources>
+                <Button Content="Info do servidor" Tag="run:server info" Click="GmQuickButton_Click" />
+                <Button Content="Salvar personagens" Tag="run:saveall" Click="GmQuickButton_Click" />
+                <Button Content="Anunciar..." Tag="fill:announce " Click="GmQuickButton_Click"
+                        ToolTip="announce &lt;mensagem&gt; — mensagem para todos os jogadores" />
+                <Button Content="Expulsar..." Tag="fill:kick " Click="GmQuickButton_Click"
+                        ToolTip="kick &lt;personagem&gt;" />
+                <Button Content="Criar conta..." Tag="fill:account create " Click="GmQuickButton_Click"
+                        ToolTip="account create &lt;usuário&gt; &lt;senha&gt;" />
+                <Button Content="Dar GM..." Tag="fill:account set gmlevel " Click="GmQuickButton_Click"
+                        ToolTip="account set gmlevel &lt;usuário&gt; &lt;nível 0-3&gt; -1   (-1 = todos os realms)" />
+                <Button Content="Recarregar config" Tag="run:reload config" Click="GmQuickButton_Click" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+            <Button x:Name="GmRunButton" DockPanel.Dock="Right" Margin="8,0,0,0" Content="Executar"
+                    Click="GmRunButton_Click" />
+            <TextBox x:Name="GmCommandBox" FontFamily="Consolas" VerticalContentAlignment="Center" Padding="4,3"
+                     PreviewKeyDown="GmCommandBox_PreviewKeyDown"
+                     ToolTip="Comando GM sem o ponto, por exemplo: server info. Setas para cima e para baixo: histórico." />
+          </DockPanel>
+
+          <TextBox x:Name="GmOutputBox" Style="{StaticResource LogBoxStyle}" TextWrapping="Wrap" />
         </DockPanel>
       </TabItem>
       <TabItem Header="Authserver">

@@ -27,6 +27,9 @@ public partial class MainWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private IMySqlController? _mySql;
     private MySqlState _mySqlState = MySqlState.Unknown;
+    private readonly List<string> _gmHistory = new();
+    private int _gmHistoryIndex;
+    private bool _gmRunning;
     private bool _playersRefreshing;
     private int? _onlinePlayers;
     private string? _lastPlayersError;
@@ -59,6 +62,8 @@ public partial class MainWindow : Window
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
         StartMySqlWithServersCheck.IsChecked = _settings.StartMySqlWithServers;
         ToolTipService.SetShowOnDisabled(MySqlStopButton, true);
+        SoapUserBox.Text = _settings.SoapUser;
+        SoapPasswordBox.Password = SecretProtector.Unprotect(_settings.SoapPasswordProtected);
         ApplyPaths();
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
@@ -219,6 +224,8 @@ public partial class MainWindow : Window
         _mySql = MySqlDetector.Detect(_settings.ServerFolder,
             () => DatabaseInfo.Read(_settings.WorldserverPath, "LoginDatabaseInfo"));
         _mySqlState = _mySql?.GetState() ?? MySqlState.Unknown;
+
+        UpdateSoapStatus();
     }
 
     private static string DescribePath(string path)
@@ -570,6 +577,7 @@ public partial class MainWindow : Window
     private void OnWorldStateChanged(ServerProcess world)
     {
         UpdateUi();
+        UpdateSoapStatus();
         _ = RefreshPlayersAsync();
 
         // Only worth a notification when the panel is not on screen.
@@ -727,6 +735,232 @@ public partial class MainWindow : Window
 
         dot.Fill = color;
         text.Text = $"{server.Name}: {label}";
+    }
+
+    private void UpdateSoapStatus()
+    {
+        SoapConfig? soap = PathsValid ? SoapClient.ReadConfig(_settings.WorldserverPath) : null;
+
+        if (soap is null)
+        {
+            SoapStatusText.Text = "Escolha a pasta do servidor para usar o SOAP.";
+            EnableSoapButton.Visibility = Visibility.Collapsed;
+        }
+        else if (!soap.Enabled)
+        {
+            SoapStatusText.Text = "O SOAP está desligado no worldserver.conf (SOAP.Enabled = 0). Ative e reinicie o " +
+                "worldserver para executar comandos GM por aqui.";
+            EnableSoapButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            SoapStatusText.Text = _manager.World.State == ServerState.Running
+                ? $"SOAP ativo em {soap.Endpoint}. Use uma conta com GM nível 3 (administrador)."
+                : $"SOAP configurado em {soap.Endpoint}. Inicie o worldserver para executar comandos.";
+            EnableSoapButton.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void EnableSoapButton_Click(object sender, RoutedEventArgs e)
+    {
+        SoapConfig? soap = PathsValid ? SoapClient.ReadConfig(_settings.WorldserverPath) : null;
+        if (soap is null)
+        {
+            return;
+        }
+
+        MessageBoxResult answer = ShowMessage(
+            $"Mudar \"SOAP.Enabled = 0\" para \"SOAP.Enabled = 1\" em:\n{soap.ConfPath}\n\n" +
+            $"O SOAP só aceita conexões em {soap.Endpoint} e pede uma conta GM nível 3. " +
+            "O worldserver precisa ser reiniciado depois.",
+            MessageBoxButton.OKCancel, MessageBoxImage.Question);
+
+        if (answer != MessageBoxResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!SoapClient.EnableInConf(soap.ConfPath))
+            {
+                ShowMessage("Não encontrei a linha \"SOAP.Enabled = 0\" no worldserver.conf.",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError("Não foi possível alterar o worldserver.conf", ex);
+            return;
+        }
+
+        AppendGmOutput("[Painel] SOAP ativado no worldserver.conf.", false);
+        UpdateSoapStatus();
+
+        if (_manager.World.IsRunning)
+        {
+            ShowMessage("SOAP ativado. Reinicie o worldserver (Restart) para começar a usar.",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void SaveSoapButton_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSoapCredentials();
+        AppendGmOutput("[Painel] Conta GM salva.", false);
+    }
+
+    private void SaveSoapCredentials()
+    {
+        _settings.SoapUser = SoapUserBox.Text.Trim();
+        _settings.SoapPasswordProtected = SecretProtector.Protect(SoapPasswordBox.Password);
+        SaveSettings();
+    }
+
+    private async void GmQuickButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string action })
+        {
+            return;
+        }
+
+        if (action.StartsWith("run:", StringComparison.Ordinal))
+        {
+            await RunGmCommandAsync(action[4..]);
+        }
+        else if (action.StartsWith("fill:", StringComparison.Ordinal))
+        {
+            // Templates that need more text: put them in the command box for the user to finish.
+            GmTab.IsSelected = true;
+            GmCommandBox.Text = action[5..];
+            GmCommandBox.Focus();
+            GmCommandBox.CaretIndex = GmCommandBox.Text.Length;
+        }
+    }
+
+    private async void GmRunButton_Click(object sender, RoutedEventArgs e) => await RunGmCommandFromBoxAsync();
+
+    private async void GmCommandBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Enter:
+                e.Handled = true;
+                await RunGmCommandFromBoxAsync();
+                break;
+            case Key.Up when _gmHistory.Count > 0:
+                e.Handled = true;
+                _gmHistoryIndex = Math.Max(0, _gmHistoryIndex - 1);
+                GmCommandBox.Text = _gmHistory[_gmHistoryIndex];
+                GmCommandBox.CaretIndex = GmCommandBox.Text.Length;
+                break;
+            case Key.Down when _gmHistory.Count > 0:
+                e.Handled = true;
+                _gmHistoryIndex = Math.Min(_gmHistory.Count, _gmHistoryIndex + 1);
+                GmCommandBox.Text = _gmHistoryIndex < _gmHistory.Count ? _gmHistory[_gmHistoryIndex] : string.Empty;
+                GmCommandBox.CaretIndex = GmCommandBox.Text.Length;
+                break;
+        }
+    }
+
+    private async Task RunGmCommandFromBoxAsync()
+    {
+        string command = GmCommandBox.Text.Trim();
+        if (command.Length == 0)
+        {
+            return;
+        }
+
+        if (_gmHistory.Count == 0 || _gmHistory[^1] != command)
+        {
+            _gmHistory.Add(command);
+        }
+
+        _gmHistoryIndex = _gmHistory.Count;
+        GmCommandBox.Clear();
+        await RunGmCommandAsync(command);
+    }
+
+    private async void KickPlayerMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (PlayersGrid.SelectedItem is not OnlinePlayer player)
+        {
+            return;
+        }
+
+        MessageBoxResult answer = ShowMessage($"Expulsar {player.Name} do jogo?",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer == MessageBoxResult.Yes)
+        {
+            await RunGmCommandAsync($"kick {player.Name}");
+            await RefreshPlayersAsync();
+        }
+    }
+
+    /// <summary>Runs a GM command through SOAP and writes it and its output to the GM tab.</summary>
+    private async Task RunGmCommandAsync(string command)
+    {
+        // A leading dot is how commands are typed in game; the console and SOAP do not want it.
+        command = command.Trim().TrimStart('.');
+        if (_gmRunning || command.Length == 0)
+        {
+            return;
+        }
+
+        GmTab.IsSelected = true;
+        AppendGmOutput($"> {command}", false);
+
+        SoapConfig? soap = PathsValid ? SoapClient.ReadConfig(_settings.WorldserverPath) : null;
+        string user = SoapUserBox.Text.Trim();
+        string password = SoapPasswordBox.Password;
+
+        string? problem = soap switch
+        {
+            null => "Escolha a pasta do servidor primeiro.",
+            { Enabled: false } => "O SOAP está desligado no worldserver.conf. Clique em \"Ativar SOAP\" e reinicie o worldserver.",
+            _ when user.Length == 0 || password.Length == 0 => "Preencha a conta GM e a senha.",
+            _ => null,
+        };
+
+        if (problem is not null)
+        {
+            AppendGmOutput(problem, true);
+            return;
+        }
+
+        _gmRunning = true;
+        GmRunButton.IsEnabled = false;
+        try
+        {
+            SoapResult result = await SoapClient.ExecuteAsync(soap!, user, password, command, _lifetime.Token);
+            AppendGmOutput(result.Output.Length > 0 ? result.Output : "(comando executado, sem resposta)", !result.Success);
+
+            // The account worked: keep it, so it does not have to be typed again.
+            if (user != _settings.SoapUser || password != SecretProtector.Unprotect(_settings.SoapPasswordProtected))
+            {
+                SaveSoapCredentials();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            AppendGmOutput(ex.Message, true);
+        }
+        finally
+        {
+            _gmRunning = false;
+            GmRunButton.IsEnabled = true;
+        }
+    }
+
+    private void AppendGmOutput(string text, bool isError)
+    {
+        string prefix = $"[{DateTime.Now:HH:mm:ss}]{(isError ? "!" : " ")} ";
+        GmOutputBox.AppendText(prefix + text.Replace("\n", "\n" + new string(' ', prefix.Length)) + "\n");
+        GmOutputBox.ScrollToEnd();
     }
 
     private async void RefreshPlayersButton_Click(object sender, RoutedEventArgs e) => await RefreshPlayersAsync();

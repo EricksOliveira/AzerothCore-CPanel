@@ -41,6 +41,12 @@ public sealed class PanelSettings
     /// <summary>Start starts MySQL first when it is stopped (and the panel can control it).</summary>
     public bool StartMySqlWithServers { get; set; } = true;
 
+    /// <summary>Game account (GM level 3) used for SOAP commands.</summary>
+    public string SoapUser { get; set; } = string.Empty;
+
+    /// <summary>SOAP password encrypted with DPAPI for the current Windows user (see SecretProtector).</summary>
+    public string SoapPasswordProtected { get; set; } = string.Empty;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 

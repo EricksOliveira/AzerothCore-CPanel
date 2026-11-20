@@ -37,9 +37,9 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Jogadores online: total no status e na bandeja, e aba com nome, nível, raça, classe, facção e mapa
 - [x] Controle do MySQL: status, iniciar e parar (MySQL portátil do Repack ou serviço do Windows), e iniciar o
   MySQL junto com o Start
+- [x] Comandos GM via SOAP: aba com conta GM, atalhos, histórico, e "Expulsar" na lista de jogadores
 
 ### Próximas versões
-- [ ] Console para enviar comandos GM (via SOAP)
 - [ ] Backup agendado do banco de dados
 - [ ] Editor do `worldserver.conf` e do `authserver.conf`
 
@@ -82,6 +82,12 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
     `LoginDatabaseInfo`. Ele continua rodando se o painel fechar, para não ser interrompido no meio de uma escrita.
   - Serviço do Windows: iniciar e parar serviços precisa de administrador; se o painel não estiver como
     administrador, o Windows pede permissão (UAC).
+- **Comandos GM (SOAP)**: a aba **Comandos GM** executa comandos pelo SOAP do worldserver e mostra a resposta de
+  cada um. Funciona mesmo com o worldserver aberto fora do painel. Precisa de `SOAP.Enabled = 1` no
+  `worldserver.conf` (o botão **Ativar SOAP** muda só essa linha; reinicie o worldserver depois) e de uma conta
+  do jogo com GM nível 3. A senha fica salva criptografada para o seu usuário do Windows (DPAPI). Tem atalhos
+  (info do servidor, salvar personagens, anunciar, expulsar, criar conta, dar GM, recarregar config), histórico
+  com as setas e, na aba **Jogadores**, o clique direito expulsa um jogador.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
