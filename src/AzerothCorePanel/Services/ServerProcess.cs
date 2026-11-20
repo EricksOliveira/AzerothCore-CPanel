@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -42,6 +43,11 @@ public sealed class ServerProcess
     private bool _stopRequested;
     private volatile bool _useConsoleOutput = true;
 
+    // Previous CPU sample, to turn total processor time into a percentage.
+    private int _sampledPid;
+    private TimeSpan _sampledCpuTime;
+    private DateTime _sampledAtUtc;
+
     internal ServerProcess(string name, JobObject job, string? shutdownCommand, string? readyMarker)
     {
         Name = name;
@@ -80,6 +86,54 @@ public sealed class ServerProcess
     public ServerState State { get; private set; } = ServerState.Stopped;
 
     public DateTime? StartedAt { get; private set; }
+
+    /// <summary>
+    /// Reads CPU and memory use of the running process; null when it is not running. CPU is measured since
+    /// the previous call and spread over all cores (100% = every core busy, like Task Manager), so the first
+    /// call after a start has no CPU value yet. Call it from one thread at a steady interval.
+    /// </summary>
+    public ProcessMetrics? SampleMetrics()
+    {
+        Process? process = _process;
+        if (process is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            process.Refresh();
+            if (process.HasExited)
+            {
+                return null;
+            }
+
+            TimeSpan cpuTime = process.TotalProcessorTime;
+            DateTime now = DateTime.UtcNow;
+            double? cpuPercent = null;
+
+            if (_sampledPid == process.Id)
+            {
+                double elapsedMs = (now - _sampledAtUtc).TotalMilliseconds;
+                if (elapsedMs > 0)
+                {
+                    double busyMs = (cpuTime - _sampledCpuTime).TotalMilliseconds;
+                    cpuPercent = Math.Clamp(busyMs / (elapsedMs * Environment.ProcessorCount) * 100, 0, 100);
+                }
+            }
+
+            _sampledPid = process.Id;
+            _sampledCpuTime = cpuTime;
+            _sampledAtUtc = now;
+
+            return new ProcessMetrics(cpuPercent, process.WorkingSet64, process.PeakWorkingSet64);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException)
+        {
+            // The process exited (or was disposed) while it was being read.
+            return null;
+        }
+    }
 
     public bool IsRunning
     {

@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly LogPane _authLog;
     private readonly LogPane _worldLog;
     private readonly DispatcherTimer _uiTimer;
+    private readonly DispatcherTimer _metricsTimer;
     private readonly CancellationTokenSource _lifetime = new();
     private bool _busy;
     private bool _closeConfirmed;
@@ -78,6 +79,11 @@ public partial class MainWindow : Window
             UpdateUi();
         };
         _uiTimer.Start();
+
+        // CPU is measured between samples, so a steady one-second interval gives stable numbers.
+        _metricsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _metricsTimer.Tick += (_, _) => UpdateMetrics();
+        _metricsTimer.Start();
 
         UpdateUi();
     }
@@ -444,6 +450,13 @@ public partial class MainWindow : Window
         }
 
         Activate();
+
+        // Wait for layout, so the TextBoxes know their size before scrolling.
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            _worldLog.ScrollToEndIfAuto();
+            _authLog.ScrollToEndIfAuto();
+        }));
     }
 
     private void OnWorldStateChanged(ServerProcess world)
@@ -492,6 +505,7 @@ public partial class MainWindow : Window
         _closed = true;
         _lifetime.Cancel();
         _uiTimer.Stop();
+        _metricsTimer.Stop();
         _tray.Dispose();
         _manager.Dispose();
         base.OnClosed(e);
@@ -568,6 +582,36 @@ public partial class MainWindow : Window
 
         dot.Fill = color;
         text.Text = $"{server.Name}: {label}";
+    }
+
+    private void UpdateMetrics()
+    {
+        ShowMetrics(_manager.World.SampleMetrics(), WorldCpuText, WorldRamText);
+        ShowMetrics(_manager.Auth.SampleMetrics(), AuthCpuText, AuthRamText);
+    }
+
+    private static void ShowMetrics(ProcessMetrics? metrics, TextBlock cpuText, TextBlock ramText)
+    {
+        if (metrics is not ProcessMetrics m)
+        {
+            cpuText.Text = "CPU —";
+            ramText.Text = "RAM —";
+            ramText.ToolTip = null;
+            cpuText.Foreground = ramText.Foreground = Brushes.Gray;
+            return;
+        }
+
+        cpuText.Text = m.CpuPercent is double cpu ? $"CPU {cpu:0.0}%" : "CPU …";
+        ramText.Text = $"RAM {FormatBytes(m.WorkingSetBytes)}";
+        ramText.ToolTip = $"Memória física em uso (working set). Pico desde o início: {FormatBytes(m.PeakWorkingSetBytes)}";
+        cpuText.Foreground = ramText.Foreground = SystemColors.ControlTextBrush;
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        const double MiB = 1024 * 1024;
+        const double GiB = MiB * 1024;
+        return bytes >= GiB ? $"{bytes / GiB:0.00} GB" : $"{bytes / MiB:0} MB";
     }
 
     private void SaveSettings()

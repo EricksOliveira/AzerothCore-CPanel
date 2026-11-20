@@ -33,10 +33,10 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   um servidor cai
 - [x] Iniciar o painel com o Windows (já na bandeja), com opção de iniciar os servidores depois que o MySQL
   estiver pronto
+- [x] Uso de CPU e RAM de cada servidor, atualizado a cada segundo
 
 ### Próximas versões
 - [ ] Iniciar e parar o MySQL do Repack
-- [ ] Uptime, uso de CPU e RAM de cada processo
 - [ ] Jogadores online
 - [ ] Console para enviar comandos GM (via SOAP)
 - [ ] Backup agendado do banco de dados
@@ -68,6 +68,8 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   no Windows, direto na bandeja. Com **E iniciar os servidores**, ele espera o MySQL aceitar conexões (até 3
   minutos, lendo o endereço do `LoginDatabaseInfo` no `worldserver.conf`) e inicia os servidores. A opção usa a
   chave `Run` do registro do seu usuário, sem precisar de administrador.
+- **CPU e RAM**: ao lado do status de cada servidor. A CPU soma todos os núcleos (100% = todos ocupados, como no
+  Gerenciador de Tarefas). A RAM é a memória física em uso (working set); passe o mouse para ver o pico.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 

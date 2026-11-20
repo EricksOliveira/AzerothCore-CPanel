@@ -78,12 +78,44 @@
         <Button x:Name="RestartButton" Content="⟳ Restart" Margin="8,0,0,0" Click="RestartButton_Click" />
       </StackPanel>
 
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-        <Ellipse x:Name="AuthDot" Width="12" Height="12" Fill="Gray" VerticalAlignment="Center" />
-        <TextBlock x:Name="AuthStatusText" Margin="6,0,20,0" VerticalAlignment="Center" Text="Authserver: Parado" />
-        <Ellipse x:Name="WorldDot" Width="12" Height="12" Fill="Gray" VerticalAlignment="Center" />
-        <TextBlock x:Name="WorldStatusText" Margin="6,0,0,0" VerticalAlignment="Center" Text="Worldserver: Parado" />
-      </StackPanel>
+      <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" MinWidth="240" />
+          <ColumnDefinition Width="Auto" MinWidth="80" />
+          <ColumnDefinition Width="Auto" MinWidth="100" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Resources>
+          <Style x:Key="MetricText" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Margin" Value="12,1,0,1" />
+            <Setter Property="Foreground" Value="Gray" />
+          </Style>
+        </Grid.Resources>
+
+        <Ellipse x:Name="WorldDot" Grid.Row="0" Grid.Column="0" Width="12" Height="12" Fill="Gray"
+                 VerticalAlignment="Center" />
+        <TextBlock x:Name="WorldStatusText" Grid.Row="0" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
+                   Text="Worldserver: Parado" />
+        <TextBlock x:Name="WorldCpuText" Grid.Row="0" Grid.Column="2" Style="{StaticResource MetricText}"
+                   Text="CPU —" ToolTip="Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)" />
+        <TextBlock x:Name="WorldRamText" Grid.Row="0" Grid.Column="3" Style="{StaticResource MetricText}"
+                   Text="RAM —" />
+
+        <Ellipse x:Name="AuthDot" Grid.Row="1" Grid.Column="0" Width="12" Height="12" Fill="Gray"
+                 VerticalAlignment="Center" />
+        <TextBlock x:Name="AuthStatusText" Grid.Row="1" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
+                   Text="Authserver: Parado" />
+        <TextBlock x:Name="AuthCpuText" Grid.Row="1" Grid.Column="2" Style="{StaticResource MetricText}"
+                   Text="CPU —" ToolTip="Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)" />
+        <TextBlock x:Name="AuthRamText" Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricText}"
+                   Text="RAM —" />
+      </Grid>
     </DockPanel>
 
     <!-- Logs -->

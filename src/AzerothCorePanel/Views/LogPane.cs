@@ -59,6 +59,18 @@ public sealed class LogPane
         }
     }
 
+    /// <summary>
+    /// Scrolls to the newest line when auto-scroll is on. Needed after the window is shown: scrolling a
+    /// hidden TextBox (panel in the tray) has no effect.
+    /// </summary>
+    public void ScrollToEndIfAuto()
+    {
+        if (AutoScroll)
+        {
+            _box.ScrollToEnd();
+        }
+    }
+
     public void Clear()
     {
         _pending.Clear();
