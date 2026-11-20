@@ -8,6 +8,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using AzerothCorePanel.Models;
 using AzerothCorePanel.Services;
+using AzerothCorePanel.Services.MySql;
 using AzerothCorePanel.Views;
 using Microsoft.Win32;
 
@@ -24,6 +25,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _metricsTimer;
     private readonly DispatcherTimer _playersTimer;
     private readonly CancellationTokenSource _lifetime = new();
+    private IMySqlController? _mySql;
+    private MySqlState _mySqlState = MySqlState.Unknown;
     private bool _playersRefreshing;
     private int? _onlinePlayers;
     private string? _lastPlayersError;
@@ -54,6 +57,8 @@ public partial class MainWindow : Window
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         LoadStartWithWindows();
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
+        StartMySqlWithServersCheck.IsChecked = _settings.StartMySqlWithServers;
+        ToolTipService.SetShowOnDisabled(MySqlStopButton, true);
         ApplyPaths();
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
@@ -64,7 +69,7 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(new Action(() => _tray.ShowNotification(title, message, isError)));
 
         _tray.OpenRequested += RestoreFromTray;
-        _tray.StartRequested += StartServers;
+        _tray.StartRequested += async () => await StartServersAsync();
         _tray.StopRequested += async () => await StopServersAsync();
         _tray.RestartRequested += async () => await RestartServersAsync();
         _tray.ExitRequested += () =>
@@ -134,6 +139,14 @@ public partial class MainWindow : Window
             return;
         }
 
+        // A service set to start automatically is usually already starting; only start MySQL when it is stopped.
+        if (_settings.StartMySqlWithServers && _mySql?.GetState() == MySqlState.Stopped
+            && !await StartMySqlAsync())
+        {
+            _tray.ShowNotification("MySQL não iniciou", "Os servidores não foram iniciados. Veja o log no painel.", true);
+            return;
+        }
+
         if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port))
         {
             var timeout = TimeSpan.FromSeconds(Math.Max(10, _settings.MySqlWaitSeconds));
@@ -166,7 +179,7 @@ public partial class MainWindow : Window
         }
 
         _worldLog.Append("[Painel] Iniciando os servidores (painel aberto com o Windows).", false);
-        StartServers();
+        await StartServersAsync();
     }
 
     private void LoadStartWithWindows()
@@ -201,6 +214,11 @@ public partial class MainWindow : Window
 
         _manager.Auth.ExePath = _settings.AuthserverPath;
         _manager.World.ExePath = _settings.WorldserverPath;
+
+        // The LoginDatabaseInfo account is read when needed, so edits to worldserver.conf are picked up.
+        _mySql = MySqlDetector.Detect(_settings.ServerFolder,
+            () => DatabaseInfo.Read(_settings.WorldserverPath, "LoginDatabaseInfo"));
+        _mySqlState = _mySql?.GetState() ?? MySqlState.Unknown;
     }
 
     private static string DescribePath(string path)
@@ -248,13 +266,74 @@ public partial class MainWindow : Window
         }
     }
 
-    private void StartButton_Click(object sender, RoutedEventArgs e) => StartServers();
+    private async void StartButton_Click(object sender, RoutedEventArgs e) => await StartServersAsync();
 
     private async void StopButton_Click(object sender, RoutedEventArgs e) => await StopServersAsync();
 
     private async void RestartButton_Click(object sender, RoutedEventArgs e) => await RestartServersAsync();
 
-    private void StartServers()
+    private async void MySqlStartButton_Click(object sender, RoutedEventArgs e) => await StartMySqlAsync();
+
+    private async void MySqlStopButton_Click(object sender, RoutedEventArgs e) => await StopMySqlAsync();
+
+    /// <summary>Starts MySQL and waits until it accepts connections. Returns false (after telling the user) on failure.</summary>
+    private async Task<bool> StartMySqlAsync()
+    {
+        IMySqlController? mySql = _mySql;
+        if (_busy || mySql is null)
+        {
+            return false;
+        }
+
+        bool started = false;
+        await RunBusyAsync(async () =>
+        {
+            _worldLog.Append($"[Painel] Iniciando o MySQL ({mySql.Description})...", false);
+            await mySql.StartAsync(_lifetime.Token);
+
+            // A running service is not necessarily accepting connections yet.
+            if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port)
+                && !await DatabaseWaiter.WaitAsync(host, port, TimeSpan.FromSeconds(60), _lifetime.Token))
+            {
+                throw new TimeoutException($"O MySQL iniciou, mas não aceitou conexões em {host}:{port} em 60s.");
+            }
+
+            _worldLog.Append("[Painel] MySQL pronto.", false);
+            started = true;
+        }, "Não foi possível iniciar o MySQL");
+
+        if (!started)
+        {
+            _worldLog.Append("[Painel] O MySQL não iniciou.", true);
+        }
+
+        return started;
+    }
+
+    private async Task StopMySqlAsync()
+    {
+        IMySqlController? mySql = _mySql;
+        if (_busy || mySql is null)
+        {
+            return;
+        }
+
+        if (_manager.AnyRunning || _manager.AnyRestartPending)
+        {
+            ShowMessage("Pare os servidores antes de parar o MySQL: eles dependem do banco de dados.",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await RunBusyAsync(async () =>
+        {
+            _worldLog.Append($"[Painel] Parando o MySQL ({mySql.Description})...", false);
+            await mySql.StopAsync(_lifetime.Token);
+            _worldLog.Append("[Painel] MySQL parado.", false);
+        }, "Não foi possível parar o MySQL");
+    }
+
+    private async Task StartServersAsync()
     {
         if (_busy || !PathsValid || _manager.AllRunning)
         {
@@ -273,6 +352,12 @@ public partial class MainWindow : Window
             {
                 return;
             }
+        }
+
+        if (_settings.StartMySqlWithServers && _mySql?.GetState() == MySqlState.Stopped
+            && !await StartMySqlAsync())
+        {
+            return;
         }
 
         try
@@ -404,6 +489,21 @@ public partial class MainWindow : Window
         }
 
         LoadStartWithWindows();
+    }
+
+    private void StartMySqlWithServersCheck_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_settings is null)
+        {
+            return;
+        }
+
+        bool enabled = StartMySqlWithServersCheck.IsChecked == true;
+        if (_settings.StartMySqlWithServers != enabled)
+        {
+            _settings.StartMySqlWithServers = enabled;
+            SaveSettings();
+        }
     }
 
     private void StartServersOnAutostartCheck_Changed(object sender, RoutedEventArgs e)
@@ -558,11 +658,16 @@ public partial class MainWindow : Window
         CommandBox.IsEnabled = canSend;
         SendCommandButton.IsEnabled = canSend;
 
+        MySqlStartButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Stopped;
+        MySqlStopButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Running && !active;
+        MySqlStopButton.ToolTip = active ? "Pare os servidores antes de parar o MySQL" : "Desliga o MySQL com segurança";
+
         UpdateStatus();
 
         _tray.Update(canStart, canStop, canRestart,
             $"AzerothCore CPanel\n{_manager.World.Name}: {StateLabel(_manager.World).Label}\n" +
             $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}" +
+            (_mySql is not null ? $"\nMySQL: {MySqlLabel(_mySqlState).Label}" : string.Empty) +
             (_onlinePlayers is int online ? $"\nJogadores online: {online}" : string.Empty));
     }
 
@@ -570,6 +675,35 @@ public partial class MainWindow : Window
     {
         ShowState(_manager.Auth, AuthDot, AuthStatusText);
         ShowState(_manager.World, WorldDot, WorldStatusText);
+        ShowMySqlState();
+    }
+
+    private static (Brush Color, string Label) MySqlLabel(MySqlState state) => state switch
+    {
+        MySqlState.Running => (Brushes.LimeGreen, "Rodando"),
+        MySqlState.Starting => (Brushes.Orange, "Iniciando..."),
+        MySqlState.Stopping => (Brushes.Orange, "Parando..."),
+        MySqlState.Stopped => (Brushes.Gray, "Parado"),
+        _ => (Brushes.Gray, "Estado desconhecido"),
+    };
+
+    private void ShowMySqlState()
+    {
+        if (_mySql is null)
+        {
+            MySqlDot.Fill = Brushes.Gray;
+            MySqlStatusText.Text = "MySQL: não encontrado";
+            MySqlStatusText.ToolTip = "O painel não achou um MySQL para controlar: nem um mysqld.exe na pasta do " +
+                "servidor, nem um serviço do Windows de MySQL ou MariaDB.";
+            MySqlStartButton.Visibility = MySqlStopButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        (Brush color, string label) = MySqlLabel(_mySqlState);
+        MySqlDot.Fill = color;
+        MySqlStatusText.Text = $"MySQL: {label} ({_mySql.Description})";
+        MySqlStatusText.ToolTip = _mySql.Description;
+        MySqlStartButton.Visibility = MySqlStopButton.Visibility = Visibility.Visible;
     }
 
     private (Brush Color, string Label) StateLabel(ServerProcess server) => server.State switch
@@ -686,6 +820,8 @@ public partial class MainWindow : Window
 
     private void UpdateMetrics()
     {
+        _mySqlState = _mySql?.GetState() ?? MySqlState.Unknown;
+
         ShowMetrics(_manager.World.SampleMetrics(), WorldCpuText, WorldRamText);
         ShowMetrics(_manager.Auth.SampleMetrics(), AuthCpuText, AuthRamText);
     }

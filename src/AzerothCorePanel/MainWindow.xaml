@@ -66,6 +66,10 @@
                     Content="E iniciar os servidores"
                     ToolTip="Quando o painel abrir com o Windows, espera o MySQL ficar pronto e inicia os servidores."
                     Checked="StartServersOnAutostartCheck_Changed" Unchecked="StartServersOnAutostartCheck_Changed" />
+          <CheckBox x:Name="StartMySqlWithServersCheck" VerticalAlignment="Center" Margin="20,0,0,0"
+                    Content="Iniciar o MySQL junto com os servidores"
+                    ToolTip="Se o MySQL estiver parado, o Start inicia ele primeiro e espera ficar pronto."
+                    Checked="StartMySqlWithServersCheck_Changed" Unchecked="StartMySqlWithServersCheck_Changed" />
         </StackPanel>
       </Grid>
     </GroupBox>
@@ -86,6 +90,7 @@
           <ColumnDefinition Width="Auto" MinWidth="100" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
@@ -117,7 +122,19 @@
         <TextBlock x:Name="AuthRamText" Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
 
-        <TextBlock x:Name="PlayersStatusText" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="6,1,0,1"
+        <Ellipse x:Name="MySqlDot" Grid.Row="2" Grid.Column="0" Width="12" Height="12" Fill="Gray"
+                 VerticalAlignment="Center" />
+        <TextBlock x:Name="MySqlStatusText" Grid.Row="2" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" MaxWidth="300" Text="MySQL: —" />
+        <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="12,1,0,1">
+          <Button x:Name="MySqlStartButton" Content="Iniciar" Padding="8,0" MinWidth="0"
+                  Click="MySqlStartButton_Click" ToolTip="Inicia o MySQL" />
+          <Button x:Name="MySqlStopButton" Content="Parar" Padding="8,0" MinWidth="0" Margin="6,0,0,0"
+                  Click="MySqlStopButton_Click" />
+        </StackPanel>
+
+        <TextBlock x:Name="PlayersStatusText" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="6,1,0,1"
                    VerticalAlignment="Center" Text="Jogadores online: —" />
       </Grid>
     </DockPanel>

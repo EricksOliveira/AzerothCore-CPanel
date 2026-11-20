@@ -35,9 +35,10 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   estiver pronto
 - [x] Uso de CPU e RAM de cada servidor, atualizado a cada segundo
 - [x] Jogadores online: total no status e na bandeja, e aba com nome, nível, raça, classe, facção e mapa
+- [x] Controle do MySQL: status, iniciar e parar (MySQL portátil do Repack ou serviço do Windows), e iniciar o
+  MySQL junto com o Start
 
 ### Próximas versões
-- [ ] Iniciar e parar o MySQL do Repack
 - [ ] Console para enviar comandos GM (via SOAP)
 - [ ] Backup agendado do banco de dados
 - [ ] Editor do `worldserver.conf` e do `authserver.conf`
@@ -73,6 +74,14 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - **Jogadores online**: enquanto o worldserver está online, o painel consulta o banco de personagens a cada 15
   segundos (usando o `CharacterDatabaseInfo` do `worldserver.conf`). O total aparece no status e na bandeja, e a
   aba **Jogadores** mostra a lista.
+- **MySQL**: o painel procura um `mysqld.exe` dentro da pasta do servidor (MySQL portátil, comum em Repacks) e,
+  se não achar, um serviço do Windows de MySQL ou MariaDB. A linha **MySQL** no status mostra o estado e tem os
+  botões **Iniciar** e **Parar** (o Parar só fica ativo com os servidores parados). Com **Iniciar o MySQL junto
+  com os servidores** (padrão), o Start inicia o MySQL primeiro se ele estiver parado. O Stop não desliga o MySQL.
+  - MySQL portátil: é iniciado com o `my.ini` da pasta dele e desligado com `SHUTDOWN`, usando a conta do
+    `LoginDatabaseInfo`. Ele continua rodando se o painel fechar, para não ser interrompido no meio de uma escrita.
+  - Serviço do Windows: iniciar e parar serviços precisa de administrador; se o painel não estiver como
+    administrador, o Windows pede permissão (UAC).
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 

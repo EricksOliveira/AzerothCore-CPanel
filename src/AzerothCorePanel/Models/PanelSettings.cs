@@ -38,6 +38,9 @@ public sealed class PanelSettings
     /// <summary>How long to wait for MySQL to accept connections before starting the servers at sign-in.</summary>
     public int MySqlWaitSeconds { get; set; } = 180;
 
+    /// <summary>Start starts MySQL first when it is stopped (and the panel can control it).</summary>
+    public bool StartMySqlWithServers { get; set; } = true;
+
     public static string SettingsDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AzerothCorePanel");
 
