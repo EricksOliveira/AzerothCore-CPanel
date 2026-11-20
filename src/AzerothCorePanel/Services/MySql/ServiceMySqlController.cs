@@ -1,3 +1,5 @@
+using AzerothCorePanel.Localization;
+
 namespace AzerothCorePanel.Services.MySql;
 
 /// <summary>MySQL or MariaDB installed as a Windows service.</summary>
@@ -16,7 +18,7 @@ public sealed class ServiceMySqlController : IMySqlController
     /// <summary>The service's mysqld.exe / mariadbd.exe, when it could be read from the registry.</summary>
     public string? ExecutablePath { get; }
 
-    public string Description => $"serviço {ServiceName}";
+    public string Description => L.F("MySql.ServiceDesc", ServiceName);
 
     public MySqlState GetState() => WindowsService.GetState(ServiceName) switch
     {

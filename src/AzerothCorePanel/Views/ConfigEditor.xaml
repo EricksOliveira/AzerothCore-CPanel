@@ -1,6 +1,7 @@
 <UserControl x:Class="AzerothCorePanel.Views.ConfigEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:AzerothCorePanel.Localization">
   <UserControl.Resources>
     <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Padding" Value="10,3" />
@@ -10,16 +11,16 @@
   <DockPanel>
     <!-- File and actions -->
     <DockPanel DockPanel.Dock="Top">
-      <TextBlock Text="Arquivo:" VerticalAlignment="Center" />
+      <TextBlock Text="{l:Tr Config.File}" VerticalAlignment="Center" />
       <ComboBox x:Name="FileCombo" Width="160" Margin="6,0,0,0" SelectionChanged="FileCombo_SelectionChanged">
         <ComboBoxItem Content="worldserver.conf" Tag="worldserver" />
         <ComboBoxItem Content="authserver.conf" Tag="authserver" />
       </ComboBox>
-      <Button DockPanel.Dock="Right" Content="Abrir no Bloco de Notas" Margin="8,0,0,0" Click="OpenNotepadButton_Click" />
-      <Button DockPanel.Dock="Right" Content="Recarregar" Margin="8,0,0,0" Click="ReloadButton_Click" />
-      <Button x:Name="SaveButton" DockPanel.Dock="Right" Content="Salvar" Margin="8,0,0,0" FontWeight="SemiBold"
+      <Button DockPanel.Dock="Right" Content="{l:Tr Config.OpenNotepad}" Margin="8,0,0,0" Click="OpenNotepadButton_Click" />
+      <Button DockPanel.Dock="Right" Content="{l:Tr Config.Reload}" Margin="8,0,0,0" Click="ReloadButton_Click" />
+      <Button x:Name="SaveButton" DockPanel.Dock="Right" Content="{l:Tr Common.Save}" Margin="8,0,0,0" FontWeight="SemiBold"
               Click="SaveButton_Click" />
-      <Button x:Name="CreateFromDistButton" DockPanel.Dock="Right" Content="Criar a partir do .dist" Margin="8,0,0,0"
+      <Button x:Name="CreateFromDistButton" DockPanel.Dock="Right" Content="{l:Tr Config.CreateFromDist}" Margin="8,0,0,0"
               Click="CreateFromDistButton_Click" />
       <TextBlock x:Name="PathText" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource SubtleTextBrush}"
                  TextTrimming="CharacterEllipsis" />
@@ -27,18 +28,18 @@
 
     <!-- Filters -->
     <DockPanel DockPanel.Dock="Top" Margin="0,8,0,0">
-      <TextBlock Text="Buscar:" VerticalAlignment="Center" />
+      <TextBlock Text="{l:Tr Config.Search}" VerticalAlignment="Center" />
       <CheckBox x:Name="ModifiedOnlyCheck" DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Center"
-                Content="Só diferentes do padrão" Checked="Filter_Changed" Unchecked="Filter_Changed" />
+                Content="{l:Tr Config.ModifiedOnly}" Checked="Filter_Changed" Unchecked="Filter_Changed" />
       <TextBox x:Name="SearchBox" Margin="6,0,0,0" Padding="4,2" VerticalContentAlignment="Center"
                TextChanged="Filter_Changed"
-               ToolTip="Procura no nome, no valor, na seção e na descrição (por exemplo: xp, rate, soap)" />
+               ToolTip="{l:Tr Config.Search.Tip}" />
     </DockPanel>
 
     <TextBlock x:Name="InfoText" DockPanel.Dock="Top" Margin="0,6,0,6" TextWrapping="Wrap" />
 
     <!-- Description of the selected option -->
-    <GroupBox DockPanel.Dock="Bottom" Header="Descrição" Margin="0,6,0,0">
+    <GroupBox DockPanel.Dock="Bottom" Header="{l:Tr Config.Description}" Margin="0,6,0,0">
       <TextBox x:Name="DescriptionBox" Height="110" IsReadOnly="True" BorderThickness="0" FontFamily="Consolas"
                TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
     </GroupBox>
@@ -52,7 +53,7 @@
             <DataTrigger Binding="{Binding IsMissing}" Value="True">
               <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
               <Setter Property="FontStyle" Value="Italic" />
-              <Setter Property="ToolTip" Value="Esta opção não está no arquivo; o servidor usa o padrão. Mude o valor para adicioná-la." />
+              <Setter Property="ToolTip" Value="{l:Tr Config.Missing.Tip}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding IsModified}" Value="True">
               <Setter Property="Background" Value="{DynamicResource ModifiedRowBrush}" />
@@ -62,11 +63,11 @@
         </Style>
       </DataGrid.RowStyle>
       <DataGrid.Columns>
-        <DataGridTextColumn Header="Seção" Binding="{Binding Section}" IsReadOnly="True" Width="170" />
-        <DataGridTextColumn Header="Opção" Binding="{Binding Key}" IsReadOnly="True" Width="260" />
-        <DataGridTextColumn Header="Valor" Width="*"
+        <DataGridTextColumn Header="{l:Tr Col.Section}" Binding="{Binding Section}" IsReadOnly="True" Width="170" />
+        <DataGridTextColumn Header="{l:Tr Col.Option}" Binding="{Binding Key}" IsReadOnly="True" Width="260" />
+        <DataGridTextColumn Header="{l:Tr Col.Value}" Width="*"
                             Binding="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-        <DataGridTextColumn Header="Padrão (.dist)" Binding="{Binding DefaultValue}" IsReadOnly="True" Width="*" />
+        <DataGridTextColumn Header="{l:Tr Col.Default}" Binding="{Binding DefaultValue}" IsReadOnly="True" Width="*" />
       </DataGrid.Columns>
     </DataGrid>
   </DockPanel>

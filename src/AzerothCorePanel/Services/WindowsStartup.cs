@@ -1,3 +1,4 @@
+using AzerothCorePanel.Localization;
 using Microsoft.Win32;
 
 namespace AzerothCorePanel.Services;
@@ -23,7 +24,7 @@ public static class WindowsStartup
     public static void Enable()
     {
         string exePath = Environment.ProcessPath
-            ?? throw new InvalidOperationException("Não foi possível descobrir o caminho do painel.");
+            ?? throw new InvalidOperationException(L.T("Startup.NoPath"));
 
         using RegistryKey key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
         key.SetValue(ValueName, $"\"{exePath}\" {AutostartArgument}");

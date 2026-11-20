@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using AzerothCorePanel.Models;
+using AzerothCorePanel.Localization;
 using AzerothCorePanel.Services;
 using AzerothCorePanel.Services.MySql;
 using AzerothCorePanel.Views;
@@ -58,10 +59,7 @@ public partial class MainWindow : Window
         _manager.CrashRestartLimit = Math.Max(1, _settings.CrashRestartLimit);
         _manager.CrashRestartWindow = TimeSpan.FromMinutes(Math.Max(1, _settings.CrashRestartWindowMinutes));
         AutoRestartCheck.IsChecked = _settings.AutoRestartOnCrash;
-        AutoRestartCheck.ToolTip =
-            $"Se um servidor cair, ele é iniciado de novo em {_manager.CrashRestartDelay.TotalSeconds:0}s. " +
-            $"Depois de {_manager.CrashRestartLimit} quedas em {_manager.CrashRestartWindow.TotalMinutes:0} " +
-            "minutos o painel desiste, para não ficar em loop.";
+        AutoRestartCheck.ToolTip = AutoRestartTip();
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         LoadStartWithWindows();
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
@@ -72,6 +70,8 @@ public partial class MainWindow : Window
         ThemeManager.Changed += OnThemeChanged;
         SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
         _tray.SetDark(ThemeManager.IsDark);
+        UpdateLanguageButton();
+        L.Changed += OnLanguageChanged;
 
         ConfigEditorView.Ask = ShowMessage;
         ConfigEditorView.Saved += OnConfigSaved;
@@ -139,7 +139,7 @@ public partial class MainWindow : Window
         {
             // The window is first shown when the tray icon is clicked.
             _trayHintShown = true;
-            _tray.ShowNotification("AzerothCore CPanel", "Iniciado com o Windows. Clique no ícone para abrir.", false);
+            _tray.ShowNotification("AzerothCore CPanel", L.T("Tray.StartedWithWindows"), false);
         }
         else
         {
@@ -157,8 +157,8 @@ public partial class MainWindow : Window
     {
         if (!PathsValid)
         {
-            _worldLog.Append("[Painel] Os servidores não foram iniciados: escolha a pasta do servidor.", true);
-            _tray.ShowNotification("Servidores não iniciados", "Abra o painel e escolha a pasta do servidor.", true);
+            _worldLog.Append(L.Log(L.T("Log.ServersNotStartedNoFolder")), true);
+            _tray.ShowNotification(L.T("Tray.ServersNotStarted"), L.T("Tray.ChooseFolder"), true);
             return;
         }
 
@@ -166,14 +166,14 @@ public partial class MainWindow : Window
         if (_settings.StartMySqlWithServers && _mySql?.GetState() == MySqlState.Stopped
             && !await StartMySqlAsync())
         {
-            _tray.ShowNotification("MySQL não iniciou", "Os servidores não foram iniciados. Veja o log no painel.", true);
+            _tray.ShowNotification(L.T("Tray.MySqlNotStarted"), L.T("Tray.SeeLog"), true);
             return;
         }
 
         if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port))
         {
             var timeout = TimeSpan.FromSeconds(Math.Max(10, _settings.MySqlWaitSeconds));
-            _worldLog.Append($"[Painel] Aguardando o MySQL em {host}:{port} (até {timeout.TotalSeconds:0}s)...", false);
+            _worldLog.Append(L.Log(L.F("Log.WaitingMySql", host, port, timeout.TotalSeconds.ToString("0"))), false);
 
             bool ready;
             try
@@ -187,10 +187,8 @@ public partial class MainWindow : Window
 
             if (!ready)
             {
-                _worldLog.Append($"[Painel] O MySQL não respondeu em {timeout.TotalSeconds:0}s; " +
-                    "os servidores não foram iniciados.", true);
-                _tray.ShowNotification("MySQL não respondeu",
-                    "Os servidores não foram iniciados. Abra o painel e clique em Start.", true);
+                _worldLog.Append(L.Log(L.F("Log.MySqlNoAnswer", timeout.TotalSeconds.ToString("0"))), true);
+                _tray.ShowNotification(L.T("Tray.MySqlNoAnswer"), L.T("Tray.ClickStart"), true);
                 return;
             }
         }
@@ -201,7 +199,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _worldLog.Append("[Painel] Iniciando os servidores (painel aberto com o Windows).", false);
+        _worldLog.Append(L.Log(L.T("Log.StartingAtSignIn")), false);
         await StartServersAsync();
     }
 
@@ -226,14 +224,23 @@ public partial class MainWindow : Window
         StartServersOnAutostartCheck.IsEnabled = StartWithWindowsCheck.IsChecked == true;
     }
 
-    private void ApplyPaths()
+    private void UpdatePathTexts()
     {
         FolderBox.Text = string.IsNullOrEmpty(_settings.ServerFolder)
-            ? "Nenhuma pasta selecionada"
+            ? L.T("Main.NoFolder")
             : _settings.ServerFolder;
 
         AuthPathText.Text = "Authserver: " + DescribePath(_settings.AuthserverPath);
         WorldPathText.Text = "Worldserver: " + DescribePath(_settings.WorldserverPath);
+    }
+
+    private string AutoRestartTip() => L.F("Main.AutoRestart.Tip",
+        _manager.CrashRestartDelay.TotalSeconds.ToString("0"), _manager.CrashRestartLimit,
+        _manager.CrashRestartWindow.TotalMinutes.ToString("0"));
+
+    private void ApplyPaths()
+    {
+        UpdatePathTexts();
 
         _manager.Auth.ExePath = _settings.AuthserverPath;
         _manager.World.ExePath = _settings.WorldserverPath;
@@ -257,17 +264,17 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrEmpty(path))
         {
-            return "não encontrado";
+            return L.T("Main.NotFound");
         }
 
-        return File.Exists(path) ? path : $"{path} (arquivo não existe mais)";
+        return File.Exists(path) ? path : L.F("Main.FileGone", path);
     }
 
     private void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Selecione a pasta da Build ou do Repack do AzerothCore",
+            Title = L.T("Dialog.ChooseServerFolder"),
         };
 
         if (Directory.Exists(_settings.ServerFolder))
@@ -292,8 +299,7 @@ public partial class MainWindow : Window
         if (auth is null || world is null)
         {
             ShowMessage(
-                "Não encontrei o authserver.exe e o worldserver.exe nessa pasta.\n\n" +
-                "Selecione a pasta raiz do Repack ou a pasta da Build (por exemplo, onde fica a pasta bin).",
+                L.T("Msg.ExesNotFound"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -320,23 +326,23 @@ public partial class MainWindow : Window
         bool started = false;
         await RunBusyAsync(async () =>
         {
-            _worldLog.Append($"[Painel] Iniciando o MySQL ({mySql.Description})...", false);
+            _worldLog.Append(L.Log(L.F("Log.StartingMySql", mySql.Description)), false);
             await mySql.StartAsync(_lifetime.Token);
 
             // A running service is not necessarily accepting connections yet.
             if (DatabaseWaiter.FindLoginDatabase(_settings.WorldserverPath) is (string host, int port)
                 && !await DatabaseWaiter.WaitAsync(host, port, TimeSpan.FromSeconds(60), _lifetime.Token))
             {
-                throw new TimeoutException($"O MySQL iniciou, mas não aceitou conexões em {host}:{port} em 60s.");
+                throw new TimeoutException(L.F("Err.MySqlNoConnections", host, port));
             }
 
-            _worldLog.Append("[Painel] MySQL pronto.", false);
+            _worldLog.Append(L.Log(L.T("Log.MySqlReady")), false);
             started = true;
-        }, "Não foi possível iniciar o MySQL");
+        }, L.T("Err.StartMySql"));
 
         if (!started)
         {
-            _worldLog.Append("[Painel] O MySQL não iniciou.", true);
+            _worldLog.Append(L.Log(L.T("Log.MySqlNotStarted")), true);
         }
 
         return started;
@@ -352,17 +358,17 @@ public partial class MainWindow : Window
 
         if (_manager.AnyRunning || _manager.AnyRestartPending)
         {
-            ShowMessage("Pare os servidores antes de parar o MySQL: eles dependem do banco de dados.",
+            ShowMessage(L.T("Msg.StopServersFirst"),
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         await RunBusyAsync(async () =>
         {
-            _worldLog.Append($"[Painel] Parando o MySQL ({mySql.Description})...", false);
+            _worldLog.Append(L.Log(L.F("Log.StoppingMySql", mySql.Description)), false);
             await mySql.StopAsync(_lifetime.Token);
-            _worldLog.Append("[Painel] MySQL parado.", false);
-        }, "Não foi possível parar o MySQL");
+            _worldLog.Append(L.Log(L.T("Log.MySqlStopped")), false);
+        }, L.T("Err.StopMySql"));
     }
 
     private async Task StartServersAsync()
@@ -376,8 +382,7 @@ public partial class MainWindow : Window
         if (foreign.Count > 0)
         {
             MessageBoxResult answer = ShowMessage(
-                "Já existe servidor rodando fora do painel:\n\n" + string.Join("\n", foreign) +
-                "\n\nIniciar outro pode causar conflito de portas. Continuar mesmo assim?",
+                L.F("Msg.ForeignServers", string.Join("\n", foreign)),
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (answer != MessageBoxResult.Yes)
@@ -398,7 +403,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível iniciar os servidores", ex);
+            ShowError(L.T("Err.StartServers"), ex);
         }
 
         UpdateUi();
@@ -408,7 +413,7 @@ public partial class MainWindow : Window
     {
         if (!_busy)
         {
-            await RunBusyAsync(_manager.StopAllAsync, "Não foi possível parar os servidores");
+            await RunBusyAsync(_manager.StopAllAsync, L.T("Err.StopServers"));
         }
     }
 
@@ -416,7 +421,7 @@ public partial class MainWindow : Window
     {
         if (!_busy && PathsValid)
         {
-            await RunBusyAsync(_manager.RestartAllAsync, "Não foi possível reiniciar os servidores");
+            await RunBusyAsync(_manager.RestartAllAsync, L.T("Err.RestartServers"));
         }
     }
 
@@ -447,7 +452,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível enviar o comando", ex);
+            ShowError(L.T("Err.SendCommand"), ex);
         }
     }
 
@@ -517,7 +522,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível mudar a opção de iniciar com o Windows", ex);
+            ShowError(L.T("Err.StartWithWindows"), ex);
         }
 
         LoadStartWithWindows();
@@ -534,6 +539,69 @@ public partial class MainWindow : Window
         ThemeManager.Apply(theme);
         _settings.Theme = tag;
         SaveSettings();
+    }
+
+    private void LanguageButton_Click(object sender, RoutedEventArgs e)
+    {
+        LanguageMenu.PlacementTarget = LanguageButton;
+        LanguageMenu.IsOpen = true;
+    }
+
+    private void LanguageMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string code })
+        {
+            return;
+        }
+
+        Localization.Language language = L.FromCode(code);
+        if (language == L.Current)
+        {
+            return;
+        }
+
+        L.Set(language);
+        _settings.Language = L.Code(language);
+        SaveSettings();
+    }
+
+    /// <summary>Flag and code of the current language on the footer button; the current one is bold in the menu.</summary>
+    private void UpdateLanguageButton()
+    {
+        string code = L.Code(L.Current);
+        LanguageFlag.Source = (ImageSource)FindResource($"Flag.{code}");
+        LanguageCode.Text = code.ToUpperInvariant();
+
+        foreach (MenuItem item in LanguageMenu.Items.OfType<MenuItem>())
+        {
+            item.FontWeight = (string)item.Tag == code ? FontWeights.Bold : FontWeights.Normal;
+        }
+    }
+
+    /// <summary>XAML texts update by themselves; texts written from code are rebuilt here.</summary>
+    private void OnLanguageChanged()
+    {
+        UpdateLanguageButton();
+
+        // A ComboBox keeps showing the old text of its selected item until the selection changes.
+        _loadingBackupOptions = true;
+        foreach (ComboBox combo in new[] { ThemeCombo, BackupIntervalCombo, BackupKeepCombo })
+        {
+            object? selected = combo.SelectedItem;
+            combo.SelectedItem = null;
+            combo.SelectedItem = selected;
+        }
+
+        _loadingBackupOptions = false;
+
+        AutoRestartCheck.ToolTip = AutoRestartTip();
+        UpdatePathTexts();
+        UpdateUi();
+        UpdateMetrics();
+        UpdateSoapStatus();
+        UpdateBackupView();
+        PlayersGrid.Items.Refresh();
+        _ = RefreshPlayersAsync();
     }
 
     private void OnThemeChanged()
@@ -591,8 +659,7 @@ public partial class MainWindow : Window
             if (!_trayHintShown)
             {
                 _trayHintShown = true;
-                _tray.ShowNotification("AzerothCore CPanel",
-                    "O painel continua rodando aqui. Clique no ícone para abrir.", false);
+                _tray.ShowNotification("AzerothCore CPanel", L.T("Tray.StillRunning"), false);
             }
         }
     }
@@ -629,13 +696,13 @@ public partial class MainWindow : Window
         // Only worth a notification when the panel is not on screen.
         if (world.State == ServerState.Running && !IsVisible)
         {
-            _tray.ShowNotification("Worldserver online", "O servidor terminou de carregar.", false);
+            _tray.ShowNotification(L.T("Tray.WorldOnline"), L.T("Tray.WorldLoaded"), false);
         }
     }
 
     private void OnConfigSaved(string path)
     {
-        _worldLog.Append($"[Painel] Configuração salva: {path} (cópia anterior em {Path.GetFileName(path)}.bak).", false);
+        _worldLog.Append(L.Log(L.F("Log.ConfigSaved", path, Path.GetFileName(path))), false);
 
         // SOAP, database and log settings come from these files.
         UpdateSoapStatus();
@@ -648,7 +715,7 @@ public partial class MainWindow : Window
 
         if (running)
         {
-            ShowMessage($"Configuração salva. Reinicie o {name} (Restart) para as mudanças valerem.",
+            ShowMessage(L.F("Msg.ConfigSavedRestart", name),
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
@@ -680,8 +747,7 @@ public partial class MainWindow : Window
         }
 
         MessageBoxResult answer = ShowMessage(
-            "Os servidores ainda estão rodando.\n\n" +
-            "Desligar os servidores (salvando os personagens) e fechar o painel?",
+            L.T("Msg.CloseWhileRunning"),
             MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (answer != MessageBoxResult.Yes)
@@ -689,7 +755,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        await RunBusyAsync(_manager.StopAllAsync, "Não foi possível parar os servidores");
+        await RunBusyAsync(_manager.StopAllAsync, L.T("Err.StopServers"));
         _closeConfirmed = true;
         Close();
     }
@@ -746,7 +812,7 @@ public partial class MainWindow : Window
 
         MySqlStartButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Stopped;
         MySqlStopButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Running && !active;
-        MySqlStopButton.ToolTip = active ? "Pare os servidores antes de parar o MySQL" : "Desliga o MySQL com segurança";
+        MySqlStopButton.ToolTip = active ? L.T("MySql.StopFirst.Tip") : L.T("MySql.Stop.Tip");
 
         UpdateStatus();
 
@@ -754,7 +820,7 @@ public partial class MainWindow : Window
             $"AzerothCore CPanel\n{_manager.World.Name}: {StateLabel(_manager.World).Label}\n" +
             $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}" +
             (_mySql is not null ? $"\nMySQL: {MySqlLabel(_mySqlState).Label}" : string.Empty) +
-            (_onlinePlayers is int online ? $"\nJogadores online: {online}" : string.Empty));
+            (_onlinePlayers is int online ? "\n" + L.F("Players.Online", online) : string.Empty));
     }
 
     private void UpdateStatus()
@@ -766,11 +832,11 @@ public partial class MainWindow : Window
 
     private static (Brush Color, string Label) MySqlLabel(MySqlState state) => state switch
     {
-        MySqlState.Running => (Brushes.LimeGreen, "Rodando"),
-        MySqlState.Starting => (Brushes.Orange, "Iniciando..."),
-        MySqlState.Stopping => (Brushes.Orange, "Parando..."),
-        MySqlState.Stopped => (Brushes.Gray, "Parado"),
-        _ => (Brushes.Gray, "Estado desconhecido"),
+        MySqlState.Running => (Brushes.LimeGreen, L.T("State.Running")),
+        MySqlState.Starting => (Brushes.Orange, L.T("State.Starting")),
+        MySqlState.Stopping => (Brushes.Orange, L.T("State.Stopping")),
+        MySqlState.Stopped => (Brushes.Gray, L.T("State.Stopped")),
+        _ => (Brushes.Gray, L.T("State.Unknown")),
     };
 
     private void ShowMySqlState()
@@ -778,9 +844,8 @@ public partial class MainWindow : Window
         if (_mySql is null)
         {
             MySqlDot.Fill = Brushes.Gray;
-            MySqlStatusText.Text = "MySQL: não encontrado";
-            MySqlStatusText.ToolTip = "O painel não achou um MySQL para controlar: nem um mysqld.exe na pasta do " +
-                "servidor, nem um serviço do Windows de MySQL ou MariaDB.";
+            MySqlStatusText.Text = L.T("MySql.NotFound");
+            MySqlStatusText.ToolTip = L.T("MySql.NotFound.Tip");
             MySqlStartButton.Visibility = MySqlStopButton.Visibility = Visibility.Collapsed;
             return;
         }
@@ -794,11 +859,11 @@ public partial class MainWindow : Window
 
     private (Brush Color, string Label) StateLabel(ServerProcess server) => server.State switch
     {
-        ServerState.Starting => (Brushes.Orange, "Iniciando..."),
-        ServerState.Running => (Brushes.LimeGreen, "Online"),
-        ServerState.Stopping => (Brushes.Orange, "Parando..."),
-        _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, "Caiu, reiniciando..."),
-        _ => (Brushes.Gray, "Parado"),
+        ServerState.Starting => (Brushes.Orange, L.T("State.Starting")),
+        ServerState.Running => (Brushes.LimeGreen, L.T("State.Online")),
+        ServerState.Stopping => (Brushes.Orange, L.T("State.Stopping")),
+        _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, L.T("State.CrashedRestarting")),
+        _ => (Brushes.Gray, L.T("State.Stopped")),
     };
 
     private void ShowState(ServerProcess server, Ellipse dot, TextBlock text)
@@ -808,7 +873,7 @@ public partial class MainWindow : Window
         if (server.State == ServerState.Running && server.StartedAt is DateTime startedAt)
         {
             TimeSpan uptime = DateTime.Now - startedAt;
-            label += $" há {(int)uptime.TotalHours:00}:{uptime.Minutes:00}:{uptime.Seconds:00}";
+            label += L.F("State.Since", $"{(int)uptime.TotalHours:00}:{uptime.Minutes:00}:{uptime.Seconds:00}");
         }
 
         dot.Fill = color;
@@ -821,20 +886,19 @@ public partial class MainWindow : Window
 
         if (soap is null)
         {
-            SoapStatusText.Text = "Escolha a pasta do servidor para usar o SOAP.";
+            SoapStatusText.Text = L.T("Soap.ChooseFolder");
             EnableSoapButton.Visibility = Visibility.Collapsed;
         }
         else if (!soap.Enabled)
         {
-            SoapStatusText.Text = "O SOAP está desligado no worldserver.conf (SOAP.Enabled = 0). Ative e reinicie o " +
-                "worldserver para executar comandos GM por aqui.";
+            SoapStatusText.Text = L.T("Soap.Disabled");
             EnableSoapButton.Visibility = Visibility.Visible;
         }
         else
         {
             SoapStatusText.Text = _manager.World.State == ServerState.Running
-                ? $"SOAP ativo em {soap.Endpoint}. Use uma conta com GM nível 3 (administrador)."
-                : $"SOAP configurado em {soap.Endpoint}. Inicie o worldserver para executar comandos.";
+                ? L.F("Soap.Active", soap.Endpoint)
+                : L.F("Soap.Configured", soap.Endpoint);
             EnableSoapButton.Visibility = Visibility.Collapsed;
         }
     }
@@ -848,9 +912,7 @@ public partial class MainWindow : Window
         }
 
         MessageBoxResult answer = ShowMessage(
-            $"Mudar \"SOAP.Enabled = 0\" para \"SOAP.Enabled = 1\" em:\n{soap.ConfPath}\n\n" +
-            $"O SOAP só aceita conexões em {soap.Endpoint} e pede uma conta GM nível 3. " +
-            "O worldserver precisa ser reiniciado depois.",
+            L.F("Msg.EnableSoap", soap.ConfPath, soap.Endpoint),
             MessageBoxButton.OKCancel, MessageBoxImage.Question);
 
         if (answer != MessageBoxResult.OK)
@@ -862,23 +924,23 @@ public partial class MainWindow : Window
         {
             if (!SoapClient.EnableInConf(soap.ConfPath))
             {
-                ShowMessage("Não encontrei a linha \"SOAP.Enabled = 0\" no worldserver.conf.",
+                ShowMessage(L.T("Msg.SoapLineNotFound"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível alterar o worldserver.conf", ex);
+            ShowError(L.T("Err.ChangeConf"), ex);
             return;
         }
 
-        AppendGmOutput("[Painel] SOAP ativado no worldserver.conf.", false);
+        AppendGmOutput(L.Log(L.T("Gm.SoapEnabledLog")), false);
         UpdateSoapStatus();
 
         if (_manager.World.IsRunning)
         {
-            ShowMessage("SOAP ativado. Reinicie o worldserver (Restart) para começar a usar.",
+            ShowMessage(L.T("Msg.SoapEnabledRestart"),
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
@@ -886,7 +948,7 @@ public partial class MainWindow : Window
     private void SaveSoapButton_Click(object sender, RoutedEventArgs e)
     {
         SaveSoapCredentials();
-        AppendGmOutput("[Painel] Conta GM salva.", false);
+        AppendGmOutput(L.Log(L.T("Gm.AccountSaved")), false);
     }
 
     private void SaveSoapCredentials()
@@ -967,7 +1029,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        MessageBoxResult answer = ShowMessage($"Expulsar {player.Name} do jogo?",
+        MessageBoxResult answer = ShowMessage(L.F("Msg.KickConfirm", player.Name),
             MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Yes)
         {
@@ -995,9 +1057,9 @@ public partial class MainWindow : Window
 
         string? problem = soap switch
         {
-            null => "Escolha a pasta do servidor primeiro.",
-            { Enabled: false } => "O SOAP está desligado no worldserver.conf. Clique em \"Ativar SOAP\" e reinicie o worldserver.",
-            _ when user.Length == 0 || password.Length == 0 => "Preencha a conta GM e a senha.",
+            null => L.T("Gm.ChooseFolderFirst"),
+            { Enabled: false } => L.T("Gm.SoapOff"),
+            _ when user.Length == 0 || password.Length == 0 => L.T("Gm.FillCredentials"),
             _ => null,
         };
 
@@ -1012,7 +1074,7 @@ public partial class MainWindow : Window
         try
         {
             SoapResult result = await SoapClient.ExecuteAsync(soap!, user, password, command, _lifetime.Token);
-            AppendGmOutput(result.Output.Length > 0 ? result.Output : "(comando executado, sem resposta)", !result.Success);
+            AppendGmOutput(result.Output.Length > 0 ? result.Output : L.T("Gm.NoOutput"), !result.Success);
 
             // The account worked: keep it, so it does not have to be typed again.
             if (user != _settings.SoapUser || password != SecretProtector.Unprotect(_settings.SoapPasswordProtected))
@@ -1086,7 +1148,7 @@ public partial class MainWindow : Window
 
     private void BackupFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Pasta onde os backups serão salvos" };
+        var dialog = new OpenFolderDialog { Title = L.T("Dialog.BackupFolder") };
         if (Directory.Exists(BackupFolderPath))
         {
             dialog.InitialDirectory = BackupFolderPath;
@@ -1113,7 +1175,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível abrir a pasta", ex);
+            ShowError(L.T("Err.OpenFolder"), ex);
         }
     }
 
@@ -1121,8 +1183,8 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Selecione o mysqldump.exe",
-            Filter = "mysqldump|mysqldump.exe;mariadb-dump.exe|Programas (*.exe)|*.exe",
+            Title = L.T("Dialog.ChooseDump"),
+            Filter = L.T("Dialog.DumpFilter"),
         };
 
         if (dialog.ShowDialog(this) == true)
@@ -1174,11 +1236,11 @@ public partial class MainWindow : Window
 
         if (!PathsValid)
         {
-            problem = "Escolha a pasta do servidor primeiro.";
+            problem = L.T("Gm.ChooseFolderFirst");
         }
         else if (mysqldump is null)
         {
-            problem = "Não encontrei o mysqldump.exe. Clique em \"Escolher mysqldump...\".";
+            problem = L.T("Backup.DumpNotFoundProblem");
         }
         else
         {
@@ -1197,7 +1259,7 @@ public partial class MainWindow : Window
                 DatabaseInfo? info = DatabaseInfo.Read(_settings.WorldserverPath, setting);
                 if (info is null)
                 {
-                    problem = $"Não encontrei o {setting} no worldserver.conf.";
+                    problem = L.F("Backup.SettingMissing", setting);
                     break;
                 }
 
@@ -1206,7 +1268,7 @@ public partial class MainWindow : Window
 
             if (problem is null && databases.Count == 0)
             {
-                problem = "Marque pelo menos um banco de dados.";
+                problem = L.T("Backup.NoDatabase");
             }
         }
 
@@ -1219,8 +1281,8 @@ public partial class MainWindow : Window
         _backupRunning = true;
         BackupNowButton.IsEnabled = false;
         string names = string.Join(", ", databases.Select(d => d.Database));
-        BackupStatusText.Text = $"Fazendo backup de {names}...";
-        _worldLog.Append($"[Painel] Backup {(scheduled ? "automático" : "manual")} de {names}...", false);
+        BackupStatusText.Text = L.F("Backup.Running", names);
+        _worldLog.Append(L.Log(L.F(scheduled ? "Log.BackupAuto" : "Log.BackupManual", names)), false);
 
         try
         {
@@ -1231,12 +1293,12 @@ public partial class MainWindow : Window
             SaveSettings();
 
             string size = new BackupFile(result.ZipPath, DateTime.Now, result.Bytes).SizeText;
-            _worldLog.Append($"[Painel] Backup salvo: {result.ZipPath} ({size}, " +
-                $"{result.Duration.TotalSeconds:0.0}s).", false);
+            _worldLog.Append(L.Log(L.F("Log.BackupSaved", result.ZipPath, size,
+                result.Duration.TotalSeconds.ToString("0.0"))), false);
 
             if (scheduled || !IsVisible)
             {
-                _tray.ShowNotification("Backup concluído", $"{Path.GetFileName(result.ZipPath)} ({size})", false);
+                _tray.ShowNotification(L.T("Tray.BackupDone"), $"{Path.GetFileName(result.ZipPath)} ({size})", false);
             }
         }
         catch (OperationCanceledException)
@@ -1257,15 +1319,15 @@ public partial class MainWindow : Window
     private void ReportBackupFailure(string message, bool scheduled)
     {
         _lastBackupFailureUtc = DateTime.UtcNow;
-        _worldLog.Append("[Painel] O backup falhou: " + message, true);
+        _worldLog.Append(L.Log(L.F("Log.BackupFailed", message)), true);
 
         if (scheduled)
         {
-            _tray.ShowNotification("Backup falhou", message, true);
+            _tray.ShowNotification(L.T("Tray.BackupFailed"), message, true);
         }
         else
         {
-            ShowMessage("O backup falhou:\n\n" + message, MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowMessage(L.F("Msg.BackupFailed", message), MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         UpdateBackupView();
@@ -1281,26 +1343,26 @@ public partial class MainWindow : Window
         BackupFolderBox.Text = BackupFolderPath;
 
         string? mysqldump = DatabaseBackup.FindMysqldump(_mySql, _settings.MysqldumpPath);
-        MysqldumpText.Text = mysqldump is null ? "mysqldump: não encontrado" : $"mysqldump: {mysqldump}";
+        MysqldumpText.Text = mysqldump is null ? L.T("Backup.DumpNotFound") : $"mysqldump: {mysqldump}";
         ChooseMysqldumpButton.Visibility = mysqldump is null || !string.IsNullOrEmpty(_settings.MysqldumpPath)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
         string last = _settings.LastBackupUtc is DateTime lastUtc
-            ? $"Último backup: {lastUtc.ToLocalTime():dd/MM/yyyy HH:mm}."
-            : "Nenhum backup feito ainda.";
+            ? L.F("Backup.Last", lastUtc.ToLocalTime().ToString("g", L.Culture))
+            : L.T("Backup.None");
 
         string next;
         if (_settings.BackupIntervalHours <= 0)
         {
-            next = "Backup automático desligado.";
+            next = L.T("Backup.ScheduleOff");
         }
         else
         {
             DateTime due = (_settings.LastBackupUtc ?? DateTime.UtcNow).AddHours(_settings.BackupIntervalHours);
             next = due <= DateTime.UtcNow
-                ? "Próximo backup automático: em instantes."
-                : $"Próximo backup automático: {due.ToLocalTime():dd/MM/yyyy HH:mm}.";
+                ? L.T("Backup.NextSoon")
+                : L.F("Backup.Next", due.ToLocalTime().ToString("g", L.Culture));
         }
 
         BackupStatusText.Text = $"{last} {next}";
@@ -1326,7 +1388,7 @@ public partial class MainWindow : Window
         string? connectionString = CharacterDatabase.BuildConnectionString(_settings.WorldserverPath);
         if (connectionString is null)
         {
-            ShowPlayers(null, "não encontrei o CharacterDatabaseInfo no worldserver.conf.");
+            ShowPlayers(null, L.F("Backup.SettingMissing", "CharacterDatabaseInfo"));
             return;
         }
 
@@ -1359,18 +1421,18 @@ public partial class MainWindow : Window
 
         PlayersGrid.ItemsSource = players ?? Array.Empty<OnlinePlayer>();
         _onlinePlayers = players?.Count;
-        PlayersTab.Header = players is null ? "Jogadores" : $"Jogadores ({players.Count})";
+        PlayersTab.Header = players is null ? L.T("Tab.Players") : L.F("Tab.PlayersCount", players.Count);
 
         if (error is not null)
         {
-            PlayersStatusText.Text = "Jogadores online: erro";
+            PlayersStatusText.Text = L.T("Players.StatusError");
             PlayersStatusText.ToolTip = error;
-            PlayersInfoText.Text = "Não foi possível consultar o banco characters: " + error;
+            PlayersInfoText.Text = L.F("Players.QueryError", error);
 
             // Log each different error once, not every 15 seconds.
             if (error != _lastPlayersError)
             {
-                _worldLog.Append("[Painel] Jogadores online: não foi possível consultar o banco: " + error, true);
+                _worldLog.Append(L.Log(L.F("Log.PlayersQueryError", error)), true);
             }
 
             _lastPlayersError = error;
@@ -1381,19 +1443,19 @@ public partial class MainWindow : Window
 
         if (players is null)
         {
-            PlayersStatusText.Text = "Jogadores online: —";
+            PlayersStatusText.Text = L.F("Players.Online", "—");
             PlayersStatusText.ToolTip = null;
-            PlayersInfoText.Text = "O worldserver não está rodando.";
+            PlayersInfoText.Text = L.T("Players.NotRunning");
             return;
         }
 
-        int alliance = players.Count(p => p.Faction == "Aliança");
-        string updated = $"atualizado às {DateTime.Now:HH:mm:ss} (a cada 15s)";
-        PlayersStatusText.Text = $"Jogadores online: {players.Count}";
-        PlayersStatusText.ToolTip = $"Aliança: {alliance} · Horda: {players.Count - alliance} — {updated}";
+        int alliance = players.Count(p => p.IsAlliance);
+        string updated = L.F("Players.Updated", DateTime.Now.ToString("T", L.Culture));
+        PlayersStatusText.Text = L.F("Players.Online", players.Count);
+        PlayersStatusText.ToolTip = L.F("Players.FactionTip", alliance, players.Count - alliance, updated);
         PlayersInfoText.Text = players.Count == 0
-            ? $"Nenhum jogador online — {updated}"
-            : $"{players.Count} online (Aliança: {alliance} · Horda: {players.Count - alliance}) — {updated}";
+            ? L.F("Players.NoneOnline", updated)
+            : L.F("Players.CountInfo", players.Count, alliance, players.Count - alliance, updated);
     }
 
     private void UpdateMetrics()
@@ -1418,7 +1480,7 @@ public partial class MainWindow : Window
 
         cpuText.Text = m.CpuPercent is double cpu ? $"CPU {cpu:0.0}%" : "CPU …";
         ramText.Text = $"RAM {FormatBytes(m.WorkingSetBytes)}";
-        ramText.ToolTip = $"Memória física em uso (working set). Pico desde o início: {FormatBytes(m.PeakWorkingSetBytes)}";
+        ramText.ToolTip = L.F("Metrics.RamTip", FormatBytes(m.PeakWorkingSetBytes));
         cpuText.SetResourceReference(ForegroundProperty, "TextBrush");
         ramText.SetResourceReference(ForegroundProperty, "TextBrush");
     }
@@ -1438,7 +1500,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            ShowError("Não foi possível salvar as configurações", ex);
+            ShowError(L.T("Err.SaveSettings"), ex);
         }
     }
 

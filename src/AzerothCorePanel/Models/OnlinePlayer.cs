@@ -1,52 +1,27 @@
+using AzerothCorePanel.Localization;
+
 namespace AzerothCorePanel.Models;
 
-/// <summary>A character that is online, with names for the WotLK (3.3.5a) race, class and map ids.</summary>
+/// <summary>
+/// A character that is online, with translated names for the WotLK (3.3.5a) race, class and map ids. The names are
+/// read when shown, so the players list follows a language change on its next refresh.
+/// </summary>
 public sealed record OnlinePlayer(string Name, int Level, int Race, int Class, int Map)
 {
-    private static readonly Dictionary<int, string> RaceNames = new()
-    {
-        [1] = "Humano",
-        [2] = "Orc",
-        [3] = "Anão",
-        [4] = "Elfo Noturno",
-        [5] = "Morto-vivo",
-        [6] = "Tauren",
-        [7] = "Gnomo",
-        [8] = "Troll",
-        [10] = "Elfo Sangrento",
-        [11] = "Draenei",
-    };
-
-    private static readonly Dictionary<int, string> ClassNames = new()
-    {
-        [1] = "Guerreiro",
-        [2] = "Paladino",
-        [3] = "Caçador",
-        [4] = "Ladino",
-        [5] = "Sacerdote",
-        [6] = "Cavaleiro da Morte",
-        [7] = "Xamã",
-        [8] = "Mago",
-        [9] = "Bruxo",
-        [11] = "Druida",
-    };
-
+    private static readonly HashSet<int> KnownRaces = new() { 1, 2, 3, 4, 5, 6, 7, 8, 10, 11 };
+    private static readonly HashSet<int> KnownClasses = new() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 11 };
     private static readonly HashSet<int> AllianceRaces = new() { 1, 3, 4, 7, 11 };
 
     // Continents; other maps are mostly dungeons, raids, battlegrounds and arenas.
-    private static readonly Dictionary<int, string> MapNames = new()
-    {
-        [0] = "Reinos do Leste",
-        [1] = "Kalimdor",
-        [530] = "Terralém",
-        [571] = "Nortúndria",
-    };
+    private static readonly HashSet<int> KnownMaps = new() { 0, 1, 530, 571 };
 
-    public string RaceName => RaceNames.TryGetValue(Race, out string? name) ? name : $"Raça {Race}";
+    public string RaceName => KnownRaces.Contains(Race) ? L.T($"Race.{Race}") : L.F("Race.Other", Race);
 
-    public string ClassName => ClassNames.TryGetValue(Class, out string? name) ? name : $"Classe {Class}";
+    public string ClassName => KnownClasses.Contains(Class) ? L.T($"Class.{Class}") : L.F("Class.Other", Class);
 
-    public string Faction => AllianceRaces.Contains(Race) ? "Aliança" : "Horda";
+    public bool IsAlliance => AllianceRaces.Contains(Race);
 
-    public string MapName => MapNames.TryGetValue(Map, out string? name) ? name : $"Mapa {Map}";
+    public string Faction => L.T(IsAlliance ? "Faction.Alliance" : "Faction.Horde");
+
+    public string MapName => KnownMaps.Contains(Map) ? L.T($"Map.{Map}") : L.F("Map.Other", Map);
 }

@@ -1,0 +1,64 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Simplified flags for the language picker, drawn on a 20 x 14 canvas (Windows does not draw flag emoji).
+    Keys: Flag.pt (Brazil), Flag.en (United States), Flag.es (Spain).
+  -->
+
+  <DrawingImage x:Key="Flag.pt">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="#009C3B" Geometry="M0,0 H20 V14 H0 Z" />
+        <GeometryDrawing Brush="#FFDF00" Geometry="M10,1.6 L18.2,7 L10,12.4 L1.8,7 Z" />
+        <GeometryDrawing Brush="#002776">
+          <GeometryDrawing.Geometry>
+            <EllipseGeometry Center="10,7" RadiusX="3.5" RadiusY="3.5" />
+          </GeometryDrawing.Geometry>
+        </GeometryDrawing>
+        <GeometryDrawing Geometry="M6.6,6.4 Q10,5.4 13.4,7.6">
+          <GeometryDrawing.Pen>
+            <Pen Brush="White" Thickness="0.7" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
+  <DrawingImage x:Key="Flag.en">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="White" Geometry="M0,0 H20 V14 H0 Z" />
+        <!-- 7 red stripes out of 13 -->
+        <GeometryDrawing Brush="#B22234"
+                         Geometry="M0,0 H20 V1.077 H0 Z M0,2.154 H20 V3.231 H0 Z M0,4.308 H20 V5.385 H0 Z M0,6.462 H20 V7.538 H0 Z M0,8.615 H20 V9.692 H0 Z M0,10.769 H20 V11.846 H0 Z M0,12.923 H20 V14 H0 Z" />
+        <GeometryDrawing Brush="#3C3B6E" Geometry="M0,0 H8 V7.538 H0 Z" />
+        <!-- stars as small dots -->
+        <GeometryDrawing Brush="White">
+          <GeometryDrawing.Geometry>
+            <GeometryGroup>
+              <EllipseGeometry Center="1.3,1.3" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="4,1.3" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="6.7,1.3" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="2.65,3" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="5.35,3" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="1.3,4.7" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="4,4.7" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="6.7,4.7" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="2.65,6.4" RadiusX="0.45" RadiusY="0.45" />
+              <EllipseGeometry Center="5.35,6.4" RadiusX="0.45" RadiusY="0.45" />
+            </GeometryGroup>
+          </GeometryDrawing.Geometry>
+        </GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+
+  <DrawingImage x:Key="Flag.es">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="#AA151B" Geometry="M0,0 H20 V14 H0 Z" />
+        <GeometryDrawing Brush="#F1BF00" Geometry="M0,3.5 H20 V10.5 H0 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>

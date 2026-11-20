@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using AzerothCorePanel.Localization;
 using AzerothCorePanel.Services.Config;
 
 namespace AzerothCorePanel.Views;
@@ -21,6 +22,21 @@ public partial class ConfigEditor : UserControl
     {
         InitializeComponent();
         FileCombo.SelectedIndex = 0;
+
+        // Texts built in code follow a language change; an open file keeps its unsaved edits.
+        L.Changed += () =>
+        {
+            if (_document is null)
+            {
+                LoadCurrent();
+            }
+            else
+            {
+                UpdateInfo();
+                UpdateButtons();
+                SettingsGrid_SelectionChanged(SettingsGrid, null!);
+            }
+        };
     }
 
     /// <summary>Raised after a successful save, with the saved file path.</summary>
@@ -54,7 +70,7 @@ public partial class ConfigEditor : UserControl
         }
 
         MessageBoxResult answer = AskUser(
-            $"Há alterações não salvas em {Path.GetFileName(_document.Path)}. Salvar agora?",
+            L.F("Config.UnsavedSave", Path.GetFileName(_document.Path)),
             MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
         return answer switch
@@ -92,7 +108,7 @@ public partial class ConfigEditor : UserControl
         if (conf is null)
         {
             PathText.Text = string.Empty;
-            InfoText.Text = "Escolha a pasta do servidor para editar as configurações.";
+            InfoText.Text = L.T("Config.ChooseFolder");
             UpdateButtons();
             return;
         }
@@ -103,8 +119,8 @@ public partial class ConfigEditor : UserControl
         {
             bool hasDist = dist is not null && File.Exists(dist);
             InfoText.Text = hasDist
-                ? $"{_currentFile}.conf não existe. Clique em \"Criar a partir do .dist\" para criar com os valores padrão."
-                : $"{_currentFile}.conf e {_currentFile}.conf.dist não existem nessa pasta.";
+                ? L.F("Config.ConfMissing", _currentFile)
+                : L.F("Config.BothMissing", _currentFile);
             CreateFromDistButton.Visibility = hasDist ? Visibility.Visible : Visibility.Collapsed;
             UpdateButtons();
             return;
@@ -116,7 +132,7 @@ public partial class ConfigEditor : UserControl
         }
         catch (Exception ex)
         {
-            InfoText.Text = $"Não foi possível ler {conf}: {ex.Message}";
+            InfoText.Text = L.F("Config.ReadError", conf, ex.Message);
             UpdateButtons();
             return;
         }
@@ -169,19 +185,18 @@ public partial class ConfigEditor : UserControl
         int missing = _document.Settings.Count(s => s.IsMissing);
         int differs = _document.Settings.Count(s => s.DiffersFromDefault);
         string missingText = missing > 0
-            ? $" {missing} opção(ões) do .dist faltam neste arquivo (em cinza; o servidor usa o padrão)."
+            ? L.F("Config.MissingInfo", missing)
             : string.Empty;
 
-        InfoText.Text = $"{_document.Settings.Count} opções, {differs} diferente(s) do padrão.{missingText} " +
-            "Clique duas vezes no valor para editar. As mudanças valem depois de reiniciar o servidor.";
+        InfoText.Text = L.F("Config.Info", _document.Settings.Count, differs, missingText);
     }
 
     private void UpdateButtons()
     {
         SaveButton.IsEnabled = HasChanges;
         SaveButton.Content = HasChanges
-            ? $"Salvar ({_document!.Settings.Count(s => s.IsModified)})"
-            : "Salvar";
+            ? L.F("Config.SaveCount", _document!.Settings.Count(s => s.IsModified))
+            : L.T("Common.Save");
     }
 
     private void FileCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -218,11 +233,11 @@ public partial class ConfigEditor : UserControl
             string header = $"{setting.Key}   [{setting.Section}]";
             if (setting.DefaultValue is not null)
             {
-                header += $"   padrão: {setting.DefaultValue}";
+                header += L.F("Config.DefaultLabel", setting.DefaultValue);
             }
 
             DescriptionBox.Text = header + "\n\n" +
-                (setting.Description.Length > 0 ? setting.Description : "(sem descrição no arquivo)");
+                (setting.Description.Length > 0 ? setting.Description : L.T("Config.NoDescription"));
         }
     }
 
@@ -243,7 +258,7 @@ public partial class ConfigEditor : UserControl
         }
         catch (Exception ex)
         {
-            AskUser($"Não foi possível salvar {_document.Path}:\n\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+            AskUser(L.F("Config.SaveError", _document.Path, ex.Message), MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
 
@@ -258,7 +273,7 @@ public partial class ConfigEditor : UserControl
     {
         if (HasChanges)
         {
-            MessageBoxResult answer = AskUser("Descartar as alterações não salvas e recarregar o arquivo?",
+            MessageBoxResult answer = AskUser(L.T("Config.DiscardReload"),
                 MessageBoxButton.OKCancel, MessageBoxImage.Warning);
             if (answer != MessageBoxResult.OK)
             {
@@ -283,7 +298,7 @@ public partial class ConfigEditor : UserControl
         }
         catch (Exception ex)
         {
-            AskUser($"Não foi possível criar {conf}:\n\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+            AskUser(L.F("Config.CreateError", conf, ex.Message), MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
@@ -305,7 +320,7 @@ public partial class ConfigEditor : UserControl
         }
         catch (Exception ex)
         {
-            AskUser($"Não foi possível abrir o Bloco de Notas:\n\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+            AskUser(L.F("Config.NotepadError", ex.Message), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

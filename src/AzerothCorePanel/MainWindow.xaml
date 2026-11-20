@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:AzerothCorePanel.Views"
+        xmlns:l="clr-namespace:AzerothCorePanel.Localization"
         Title="AzerothCore CPanel"
         Icon="Assets/app.ico"
         Width="1000" Height="720"
@@ -39,7 +40,7 @@
     </Grid.RowDefinitions>
 
     <!-- Server folder -->
-    <GroupBox Grid.Row="0" Header="Servidor (pasta da Build ou do Repack)" Padding="8">
+    <GroupBox Grid.Row="0" Header="{l:Tr Main.ServerGroup}" Padding="8">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
@@ -55,36 +56,33 @@
         <TextBox x:Name="FolderBox" Grid.Row="0" Grid.Column="0" IsReadOnly="True"
                  VerticalContentAlignment="Center" Padding="4,3" />
         <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="1" Margin="8,0,0,0"
-                Content="Procurar..." Click="BrowseButton_Click" />
+                Content="{l:Tr Common.Browse}" Click="BrowseButton_Click" />
 
         <TextBlock x:Name="AuthPathText" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,6,0,0"
                    Foreground="{DynamicResource SubtleTextBrush}" TextTrimming="CharacterEllipsis" />
         <TextBlock x:Name="WorldPathText" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,2,0,0"
                    Foreground="{DynamicResource SubtleTextBrush}" TextTrimming="CharacterEllipsis" />
 
-        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
-          <CheckBox x:Name="StartWithWindowsCheck" VerticalAlignment="Center"
-                    Content="Iniciar o painel com o Windows"
-                    ToolTip="Abre o painel quando você entra no Windows, já na bandeja do sistema."
+        <WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
+          <CheckBox x:Name="StartWithWindowsCheck" VerticalAlignment="Center" Margin="0,0,20,0"
+                    Content="{l:Tr Main.StartWithWindows}" ToolTip="{l:Tr Main.StartWithWindows.Tip}"
                     Checked="StartWithWindowsCheck_Changed" Unchecked="StartWithWindowsCheck_Changed" />
-          <CheckBox x:Name="StartServersOnAutostartCheck" VerticalAlignment="Center" Margin="20,0,0,0"
-                    Content="E iniciar os servidores"
-                    ToolTip="Quando o painel abrir com o Windows, espera o MySQL ficar pronto e inicia os servidores."
+          <CheckBox x:Name="StartServersOnAutostartCheck" VerticalAlignment="Center" Margin="0,0,20,0"
+                    Content="{l:Tr Main.StartServersOnAutostart}" ToolTip="{l:Tr Main.StartServersOnAutostart.Tip}"
                     Checked="StartServersOnAutostartCheck_Changed" Unchecked="StartServersOnAutostartCheck_Changed" />
-          <CheckBox x:Name="StartMySqlWithServersCheck" VerticalAlignment="Center" Margin="20,0,0,0"
-                    Content="Iniciar o MySQL junto com os servidores"
-                    ToolTip="Se o MySQL estiver parado, o Start inicia ele primeiro e espera ficar pronto."
+          <CheckBox x:Name="StartMySqlWithServersCheck" VerticalAlignment="Center"
+                    Content="{l:Tr Main.StartMySql}" ToolTip="{l:Tr Main.StartMySql.Tip}"
                     Checked="StartMySqlWithServersCheck_Changed" Unchecked="StartMySqlWithServersCheck_Changed" />
-        </StackPanel>
+        </WrapPanel>
       </Grid>
     </GroupBox>
 
     <!-- Controls and status -->
     <DockPanel Grid.Row="1" Margin="0,12,0,12" LastChildFill="False">
       <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-        <Button x:Name="StartButton" Content="▶ Start" Click="StartButton_Click" />
-        <Button x:Name="StopButton" Content="■ Stop" Margin="8,0,0,0" Click="StopButton_Click" />
-        <Button x:Name="RestartButton" Content="⟳ Restart" Margin="8,0,0,0" Click="RestartButton_Click" />
+        <Button x:Name="StartButton" Content="{l:Tr Main.Start}" Click="StartButton_Click" />
+        <Button x:Name="StopButton" Content="{l:Tr Main.Stop}" Margin="8,0,0,0" Click="StopButton_Click" />
+        <Button x:Name="RestartButton" Content="{l:Tr Main.Restart}" Margin="8,0,0,0" Click="RestartButton_Click" />
       </StackPanel>
 
       <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
@@ -111,19 +109,17 @@
 
         <Ellipse x:Name="WorldDot" Grid.Row="0" Grid.Column="0" Width="12" Height="12" Fill="Gray"
                  VerticalAlignment="Center" />
-        <TextBlock x:Name="WorldStatusText" Grid.Row="0" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
-                   Text="Worldserver: Parado" />
+        <TextBlock x:Name="WorldStatusText" Grid.Row="0" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center" />
         <TextBlock x:Name="WorldCpuText" Grid.Row="0" Grid.Column="2" Style="{StaticResource MetricText}"
-                   Text="CPU —" ToolTip="Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)" />
+                   Text="CPU —" ToolTip="{l:Tr Main.Cpu.Tip}" />
         <TextBlock x:Name="WorldRamText" Grid.Row="0" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
 
         <Ellipse x:Name="AuthDot" Grid.Row="1" Grid.Column="0" Width="12" Height="12" Fill="Gray"
                  VerticalAlignment="Center" />
-        <TextBlock x:Name="AuthStatusText" Grid.Row="1" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
-                   Text="Authserver: Parado" />
+        <TextBlock x:Name="AuthStatusText" Grid.Row="1" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center" />
         <TextBlock x:Name="AuthCpuText" Grid.Row="1" Grid.Column="2" Style="{StaticResource MetricText}"
-                   Text="CPU —" ToolTip="Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)" />
+                   Text="CPU —" ToolTip="{l:Tr Main.Cpu.Tip}" />
         <TextBlock x:Name="AuthRamText" Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
 
@@ -133,77 +129,75 @@
                    TextTrimming="CharacterEllipsis" MaxWidth="300" Text="MySQL: —" />
         <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="12,1,0,1">
-          <Button x:Name="MySqlStartButton" Content="Iniciar" Padding="8,0" MinWidth="0"
-                  Click="MySqlStartButton_Click" ToolTip="Inicia o MySQL" />
-          <Button x:Name="MySqlStopButton" Content="Parar" Padding="8,0" MinWidth="0" Margin="6,0,0,0"
+          <Button x:Name="MySqlStartButton" Content="{l:Tr MySql.Start}" Padding="8,0" MinWidth="0"
+                  Click="MySqlStartButton_Click" ToolTip="{l:Tr MySql.Start.Tip}" />
+          <Button x:Name="MySqlStopButton" Content="{l:Tr MySql.Stop}" Padding="8,0" MinWidth="0" Margin="6,0,0,0"
                   Click="MySqlStopButton_Click" />
         </StackPanel>
 
         <TextBlock x:Name="PlayersStatusText" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="6,1,0,1"
-                   VerticalAlignment="Center" Text="Jogadores online: —" />
+                   VerticalAlignment="Center" />
       </Grid>
     </DockPanel>
 
-    <!-- Logs -->
+    <!-- Logs and tools -->
     <TabControl Grid.Row="2">
       <TabItem Header="Worldserver">
         <DockPanel>
           <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
             <Button x:Name="SendCommandButton" DockPanel.Dock="Right" Margin="8,0,0,0"
-                    Content="Enviar" Click="SendCommandButton_Click" />
+                    Content="{l:Tr Console.Send}" Click="SendCommandButton_Click" />
             <TextBox x:Name="CommandBox" FontFamily="Consolas" VerticalContentAlignment="Center" Padding="4,3"
-                     KeyDown="CommandBox_KeyDown"
-                     ToolTip="Comando do console do worldserver, por exemplo: server info" />
+                     KeyDown="CommandBox_KeyDown" ToolTip="{l:Tr Console.Tip}" />
           </DockPanel>
           <TextBox x:Name="WorldLogBox" Style="{StaticResource LogBoxStyle}" />
         </DockPanel>
       </TabItem>
-      <TabItem x:Name="PlayersTab" Header="Jogadores">
+      <TabItem x:Name="PlayersTab" Header="{l:Tr Tab.Players}">
         <DockPanel>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-            <Button DockPanel.Dock="Right" Content="Atualizar" Click="RefreshPlayersButton_Click" />
-            <TextBlock x:Name="PlayersInfoText" VerticalAlignment="Center" Text="O worldserver não está rodando." />
+            <Button DockPanel.Dock="Right" Content="{l:Tr Common.Refresh}" Click="RefreshPlayersButton_Click" />
+            <TextBlock x:Name="PlayersInfoText" VerticalAlignment="Center" />
           </DockPanel>
           <DataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                     HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single">
             <DataGrid.ContextMenu>
               <ContextMenu>
-                <MenuItem Header="Expulsar do jogo (kick, via SOAP)" Click="KickPlayerMenu_Click" />
+                <MenuItem Header="{l:Tr Players.Kick}" Click="KickPlayerMenu_Click" />
               </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Nome" Binding="{Binding Name}" Width="2*" />
-              <DataGridTextColumn Header="Nível" Binding="{Binding Level}" Width="Auto" />
-              <DataGridTextColumn Header="Raça" Binding="{Binding RaceName}" Width="*" />
-              <DataGridTextColumn Header="Classe" Binding="{Binding ClassName}" Width="*" />
-              <DataGridTextColumn Header="Facção" Binding="{Binding Faction}" Width="Auto" />
-              <DataGridTextColumn Header="Mapa" Binding="{Binding MapName}" Width="*" />
+              <DataGridTextColumn Header="{l:Tr Col.Name}" Binding="{Binding Name}" Width="2*" />
+              <DataGridTextColumn Header="{l:Tr Col.Level}" Binding="{Binding Level}" Width="Auto" />
+              <DataGridTextColumn Header="{l:Tr Col.Race}" Binding="{Binding RaceName}" Width="*" />
+              <DataGridTextColumn Header="{l:Tr Col.Class}" Binding="{Binding ClassName}" Width="*" />
+              <DataGridTextColumn Header="{l:Tr Col.Faction}" Binding="{Binding Faction}" Width="Auto" />
+              <DataGridTextColumn Header="{l:Tr Col.Map}" Binding="{Binding MapName}" Width="*" />
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>
       </TabItem>
-      <TabItem x:Name="GmTab" Header="Comandos GM">
+      <TabItem x:Name="GmTab" Header="{l:Tr Tab.Gm}">
         <DockPanel>
-          <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,8"
-                  Margin="0,0,0,8">
+          <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="0,0,0,1"
+                  Padding="0,0,0,8" Margin="0,0,0,8">
             <StackPanel>
               <DockPanel>
                 <Button x:Name="EnableSoapButton" DockPanel.Dock="Right" Margin="8,0,0,0"
-                        Content="Ativar SOAP no worldserver.conf" Click="EnableSoapButton_Click" />
+                        Content="{l:Tr Gm.EnableSoap}" Click="EnableSoapButton_Click" />
                 <TextBlock x:Name="SoapStatusText" VerticalAlignment="Center" TextWrapping="Wrap" />
               </DockPanel>
               <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                <TextBlock Text="Conta GM:" VerticalAlignment="Center" />
+                <TextBlock Text="{l:Tr Gm.Account}" VerticalAlignment="Center" />
                 <TextBox x:Name="SoapUserBox" Width="160" Margin="6,0,0,0" Padding="3,2"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Conta do jogo com GM nível 3 (administrador)" />
-                <TextBlock Text="Senha:" VerticalAlignment="Center" Margin="16,0,0,0" />
+                         VerticalContentAlignment="Center" ToolTip="{l:Tr Gm.Account.Tip}" />
+                <TextBlock Text="{l:Tr Gm.Password}" VerticalAlignment="Center" Margin="16,0,0,0" />
                 <PasswordBox x:Name="SoapPasswordBox" Width="160" Margin="6,0,0,0" Padding="3,2"
                              VerticalContentAlignment="Center" />
-                <Button Content="Salvar" Margin="12,0,0,0" Click="SaveSoapButton_Click"
-                        ToolTip="Guarda a conta e a senha (a senha fica criptografada para o seu usuário do Windows)" />
-                <Button Content="Testar" Margin="8,0,0,0" Tag="run:server info" Click="GmQuickButton_Click"
-                        ToolTip="Executa 'server info' pelo SOAP" />
+                <Button Content="{l:Tr Common.Save}" Margin="12,0,0,0" Click="SaveSoapButton_Click"
+                        ToolTip="{l:Tr Gm.Save.Tip}" />
+                <Button Content="{l:Tr Gm.Test}" Margin="8,0,0,0" Tag="run:server info" Click="GmQuickButton_Click"
+                        ToolTip="{l:Tr Gm.Test.Tip}" />
               </StackPanel>
               <WrapPanel Margin="0,8,0,0">
                 <WrapPanel.Resources>
@@ -213,88 +207,90 @@
                     <Setter Property="MinWidth" Value="0" />
                   </Style>
                 </WrapPanel.Resources>
-                <Button Content="Info do servidor" Tag="run:server info" Click="GmQuickButton_Click" />
-                <Button Content="Salvar personagens" Tag="run:saveall" Click="GmQuickButton_Click" />
-                <Button Content="Anunciar..." Tag="fill:announce " Click="GmQuickButton_Click"
-                        ToolTip="announce &lt;mensagem&gt; — mensagem para todos os jogadores" />
-                <Button Content="Expulsar..." Tag="fill:kick " Click="GmQuickButton_Click"
-                        ToolTip="kick &lt;personagem&gt;" />
-                <Button Content="Criar conta..." Tag="fill:account create " Click="GmQuickButton_Click"
-                        ToolTip="account create &lt;usuário&gt; &lt;senha&gt;" />
-                <Button Content="Dar GM..." Tag="fill:account set gmlevel " Click="GmQuickButton_Click"
-                        ToolTip="account set gmlevel &lt;usuário&gt; &lt;nível 0-3&gt; -1   (-1 = todos os realms)" />
-                <Button Content="Recarregar config" Tag="run:reload config" Click="GmQuickButton_Click" />
+                <Button Content="{l:Tr Gm.ServerInfo}" Tag="run:server info" Click="GmQuickButton_Click" />
+                <Button Content="{l:Tr Gm.SaveAll}" Tag="run:saveall" Click="GmQuickButton_Click" />
+                <Button Content="{l:Tr Gm.Announce}" Tag="fill:announce " Click="GmQuickButton_Click"
+                        ToolTip="{l:Tr Gm.Announce.Tip}" />
+                <Button Content="{l:Tr Gm.Kick}" Tag="fill:kick " Click="GmQuickButton_Click"
+                        ToolTip="{l:Tr Gm.Kick.Tip}" />
+                <Button Content="{l:Tr Gm.CreateAccount}" Tag="fill:account create " Click="GmQuickButton_Click"
+                        ToolTip="{l:Tr Gm.CreateAccount.Tip}" />
+                <Button Content="{l:Tr Gm.SetGm}" Tag="fill:account set gmlevel " Click="GmQuickButton_Click"
+                        ToolTip="{l:Tr Gm.SetGm.Tip}" />
+                <Button Content="{l:Tr Gm.Reload}" Tag="run:reload config" Click="GmQuickButton_Click" />
               </WrapPanel>
             </StackPanel>
           </Border>
 
           <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
-            <Button x:Name="GmRunButton" DockPanel.Dock="Right" Margin="8,0,0,0" Content="Executar"
+            <Button x:Name="GmRunButton" DockPanel.Dock="Right" Margin="8,0,0,0" Content="{l:Tr Gm.Run}"
                     Click="GmRunButton_Click" />
             <TextBox x:Name="GmCommandBox" FontFamily="Consolas" VerticalContentAlignment="Center" Padding="4,3"
-                     PreviewKeyDown="GmCommandBox_PreviewKeyDown"
-                     ToolTip="Comando GM sem o ponto, por exemplo: server info. Setas para cima e para baixo: histórico." />
+                     PreviewKeyDown="GmCommandBox_PreviewKeyDown" ToolTip="{l:Tr Gm.Command.Tip}" />
           </DockPanel>
 
           <TextBox x:Name="GmOutputBox" Style="{StaticResource LogBoxStyle}" TextWrapping="Wrap" />
         </DockPanel>
       </TabItem>
-      <TabItem x:Name="ConfigTab" Header="Configuração">
+      <TabItem x:Name="ConfigTab" Header="{l:Tr Tab.Config}">
         <views:ConfigEditor x:Name="ConfigEditorView" />
       </TabItem>
-      <TabItem x:Name="BackupTab" Header="Backup">
+      <TabItem x:Name="BackupTab" Header="{l:Tr Tab.Backup}">
         <DockPanel>
           <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <DockPanel>
-              <TextBlock Text="Pasta:" VerticalAlignment="Center" Width="120" />
-              <Button DockPanel.Dock="Right" Content="Abrir pasta" Margin="8,0,0,0" Click="OpenBackupFolderButton_Click" />
-              <Button DockPanel.Dock="Right" Content="Procurar..." Margin="8,0,0,0" Click="BackupFolderButton_Click" />
+              <TextBlock Text="{l:Tr Backup.Folder}" VerticalAlignment="Center" Width="150" />
+              <Button DockPanel.Dock="Right" Content="{l:Tr Backup.OpenFolder}" Margin="8,0,0,0"
+                      Click="OpenBackupFolderButton_Click" />
+              <Button DockPanel.Dock="Right" Content="{l:Tr Common.Browse}" Margin="8,0,0,0"
+                      Click="BackupFolderButton_Click" />
               <TextBox x:Name="BackupFolderBox" IsReadOnly="True" VerticalContentAlignment="Center" Padding="4,3" />
             </DockPanel>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-              <TextBlock Text="Bancos:" VerticalAlignment="Center" Width="120" />
-              <CheckBox x:Name="BackupAuthCheck" Content="Contas (auth)" VerticalAlignment="Center"
+              <TextBlock Text="{l:Tr Backup.Databases}" VerticalAlignment="Center" Width="150" />
+              <CheckBox x:Name="BackupAuthCheck" Content="{l:Tr Backup.Auth}" VerticalAlignment="Center"
                         Checked="BackupOption_Changed" Unchecked="BackupOption_Changed" />
-              <CheckBox x:Name="BackupCharactersCheck" Content="Personagens (characters)" Margin="16,0,0,0"
+              <CheckBox x:Name="BackupCharactersCheck" Content="{l:Tr Backup.Characters}" Margin="16,0,0,0"
                         VerticalAlignment="Center" Checked="BackupOption_Changed" Unchecked="BackupOption_Changed" />
-              <CheckBox x:Name="BackupWorldCheck" Content="Mundo (world)" Margin="16,0,0,0" VerticalAlignment="Center"
-                        ToolTip="O banco world é grande (centenas de MB) e pode ser recriado com os SQL do AzerothCore. Marque se você alterou o mundo (NPCs, itens, scripts...)."
+              <CheckBox x:Name="BackupWorldCheck" Content="{l:Tr Backup.World}" Margin="16,0,0,0"
+                        VerticalAlignment="Center" ToolTip="{l:Tr Backup.World.Tip}"
                         Checked="BackupOption_Changed" Unchecked="BackupOption_Changed" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-              <TextBlock Text="Backup automático:" VerticalAlignment="Center" Width="120" />
-              <ComboBox x:Name="BackupIntervalCombo" Width="150" SelectionChanged="BackupOption_Changed">
-                <ComboBoxItem Content="Desligado" Tag="0" />
-                <ComboBoxItem Content="A cada 1 hora" Tag="1" />
-                <ComboBoxItem Content="A cada 6 horas" Tag="6" />
-                <ComboBoxItem Content="A cada 12 horas" Tag="12" />
-                <ComboBoxItem Content="Uma vez por dia" Tag="24" />
+              <TextBlock Text="{l:Tr Backup.Schedule}" VerticalAlignment="Center" Width="150" />
+              <ComboBox x:Name="BackupIntervalCombo" Width="160" SelectionChanged="BackupOption_Changed">
+                <ComboBoxItem Content="{l:Tr Backup.Off}" Tag="0" />
+                <ComboBoxItem Content="{l:Tr Backup.Every1h}" Tag="1" />
+                <ComboBoxItem Content="{l:Tr Backup.Every6h}" Tag="6" />
+                <ComboBoxItem Content="{l:Tr Backup.Every12h}" Tag="12" />
+                <ComboBoxItem Content="{l:Tr Backup.Daily}" Tag="24" />
               </ComboBox>
-              <TextBlock Text="Manter os últimos:" VerticalAlignment="Center" Margin="16,0,6,0" />
+              <TextBlock Text="{l:Tr Backup.Keep}" VerticalAlignment="Center" Margin="16,0,6,0" />
               <ComboBox x:Name="BackupKeepCombo" Width="90" SelectionChanged="BackupOption_Changed"
-                        ToolTip="Backups mais antigos que isso são apagados (só os arquivos backup_*.zip)">
+                        ToolTip="{l:Tr Backup.Keep.Tip}">
                 <ComboBoxItem Content="5" Tag="5" />
                 <ComboBoxItem Content="10" Tag="10" />
                 <ComboBoxItem Content="20" Tag="20" />
                 <ComboBoxItem Content="50" Tag="50" />
-                <ComboBoxItem Content="Todos" Tag="0" />
+                <ComboBoxItem Content="{l:Tr Backup.All}" Tag="0" />
               </ComboBox>
-              <Button x:Name="BackupNowButton" Content="Fazer backup agora" Margin="16,0,0,0" Click="BackupNowButton_Click" />
+              <Button x:Name="BackupNowButton" Content="{l:Tr Backup.Now}" Margin="16,0,0,0"
+                      Click="BackupNowButton_Click" />
             </StackPanel>
             <TextBlock x:Name="BackupStatusText" Margin="0,8,0,0" TextWrapping="Wrap" />
             <DockPanel Margin="0,4,0,0">
-              <Button x:Name="ChooseMysqldumpButton" DockPanel.Dock="Right" Content="Escolher mysqldump..."
+              <Button x:Name="ChooseMysqldumpButton" DockPanel.Dock="Right" Content="{l:Tr Backup.ChooseDump}"
                       Margin="8,0,0,0" Click="ChooseMysqldumpButton_Click" />
-              <TextBlock x:Name="MysqldumpText" Foreground="{DynamicResource SubtleTextBrush}" VerticalAlignment="Center"
-                         TextTrimming="CharacterEllipsis" />
+              <TextBlock x:Name="MysqldumpText" Foreground="{DynamicResource SubtleTextBrush}"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             </DockPanel>
           </StackPanel>
           <DataGrid x:Name="BackupsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                     HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Arquivo" Binding="{Binding Name}" Width="2*" />
-              <DataGridTextColumn Header="Data" Binding="{Binding CreatedText}" Width="*" />
-              <DataGridTextColumn Header="Tamanho" Binding="{Binding SizeText}" Width="Auto" />
+              <DataGridTextColumn Header="{l:Tr Col.File}" Binding="{Binding Name}" Width="2*" />
+              <DataGridTextColumn Header="{l:Tr Col.Date}" Binding="{Binding CreatedText}" Width="*" />
+              <DataGridTextColumn Header="{l:Tr Col.Size}" Binding="{Binding SizeText}" Width="Auto" />
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>
@@ -307,22 +303,60 @@
     <!-- Footer -->
     <DockPanel Grid.Row="3" Margin="0,8,0,0">
       <CheckBox x:Name="AutoScrollCheck" DockPanel.Dock="Left" VerticalAlignment="Center" IsChecked="True"
-                Content="Rolar automaticamente" Checked="AutoScrollCheck_Changed" Unchecked="AutoScrollCheck_Changed" />
+                Content="{l:Tr Footer.AutoScroll}" Checked="AutoScrollCheck_Changed" Unchecked="AutoScrollCheck_Changed" />
       <CheckBox x:Name="AutoRestartCheck" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="20,0,0,0"
-                Content="Reiniciar servidor se cair"
+                Content="{l:Tr Footer.AutoRestart}"
                 Checked="AutoRestartCheck_Changed" Unchecked="AutoRestartCheck_Changed" />
       <CheckBox x:Name="MinimizeToTrayCheck" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="20,0,0,0"
-                Content="Minimizar para a bandeja"
-                ToolTip="Ao minimizar, o painel sai da barra de tarefas e fica no ícone perto do relógio."
+                Content="{l:Tr Footer.MinimizeToTray}" ToolTip="{l:Tr Footer.MinimizeToTray.Tip}"
                 Checked="MinimizeToTrayCheck_Changed" Unchecked="MinimizeToTrayCheck_Changed" />
-      <Button DockPanel.Dock="Right" Content="Limpar logs" Click="ClearLogsButton_Click" />
+      <Button DockPanel.Dock="Right" Content="{l:Tr Footer.ClearLogs}" Click="ClearLogsButton_Click" />
+
+      <!-- Language picker: the flag of the current language; click to choose another. -->
+      <Button x:Name="LanguageButton" DockPanel.Dock="Right" Margin="0,0,8,0" Padding="8,4" MinWidth="0"
+              Click="LanguageButton_Click" ToolTip="{l:Tr Language.Tip}">
+        <StackPanel Orientation="Horizontal">
+          <Image x:Name="LanguageFlag" Width="20" Height="14" Source="{StaticResource Flag.en}" />
+          <TextBlock x:Name="LanguageCode" Margin="6,0,4,0" VerticalAlignment="Center" Text="EN" />
+          <TextBlock Text="▾" VerticalAlignment="Center" Foreground="{DynamicResource SubtleTextBrush}" />
+        </StackPanel>
+        <Button.ContextMenu>
+          <ContextMenu x:Name="LanguageMenu" Placement="Top">
+            <MenuItem Tag="en" Click="LanguageMenuItem_Click">
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <Image Width="20" Height="14" Source="{StaticResource Flag.en}" />
+                  <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="EN — English" />
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem Tag="pt" Click="LanguageMenuItem_Click">
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <Image Width="20" Height="14" Source="{StaticResource Flag.pt}" />
+                  <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="PT — Português" />
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+            <MenuItem Tag="es" Click="LanguageMenuItem_Click">
+              <MenuItem.Header>
+                <StackPanel Orientation="Horizontal">
+                  <Image Width="20" Height="14" Source="{StaticResource Flag.es}" />
+                  <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="ES — Español" />
+                </StackPanel>
+              </MenuItem.Header>
+            </MenuItem>
+          </ContextMenu>
+        </Button.ContextMenu>
+      </Button>
+
       <ComboBox x:Name="ThemeCombo" DockPanel.Dock="Right" Width="150" Margin="0,0,12,0" VerticalAlignment="Center"
                 SelectionChanged="ThemeCombo_SelectionChanged">
-        <ComboBoxItem Content="Seguir o Windows" Tag="System" />
-        <ComboBoxItem Content="Claro" Tag="Light" />
-        <ComboBoxItem Content="Escuro" Tag="Dark" />
+        <ComboBoxItem Content="{l:Tr Theme.System}" Tag="System" />
+        <ComboBoxItem Content="{l:Tr Theme.Light}" Tag="Light" />
+        <ComboBoxItem Content="{l:Tr Theme.Dark}" Tag="Dark" />
       </ComboBox>
-      <TextBlock DockPanel.Dock="Right" Text="Tema:" VerticalAlignment="Center" Margin="0,0,6,0" />
+      <TextBlock DockPanel.Dock="Right" Text="{l:Tr Footer.Theme}" VerticalAlignment="Center" Margin="0,0,6,0" />
       <TextBlock />
     </DockPanel>
   </Grid>

@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using AzerothCorePanel.Localization;
 
 namespace AzerothCorePanel.Services;
 
@@ -102,8 +103,7 @@ public static class SoapClient
         catch (HttpRequestException ex)
         {
             throw new InvalidOperationException(
-                $"Não foi possível conectar ao SOAP em {config.Endpoint}. O worldserver está online e com " +
-                "SOAP.Enabled = 1?", ex);
+                L.F("Soap.ConnectError", config.Endpoint), ex);
         }
 
         using (response)
@@ -111,9 +111,9 @@ public static class SoapClient
             switch (response.StatusCode)
             {
                 case HttpStatusCode.Unauthorized:
-                    throw new InvalidOperationException("Conta ou senha inválida.");
+                    throw new InvalidOperationException(L.T("Soap.BadLogin"));
                 case HttpStatusCode.Forbidden:
-                    throw new InvalidOperationException("A conta precisa ser GM nível 3 (administrador) para usar o SOAP.");
+                    throw new InvalidOperationException(L.T("Soap.LowLevel"));
             }
 
             string body = await response.Content.ReadAsStringAsync(token);
@@ -124,7 +124,7 @@ public static class SoapClient
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Resposta inesperada do SOAP (HTTP {(int)response.StatusCode}).", ex);
+                throw new InvalidOperationException(L.F("Soap.Unexpected", (int)response.StatusCode), ex);
             }
 
             string? result = FindElement(document, "result");

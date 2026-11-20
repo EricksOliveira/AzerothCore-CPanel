@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using AzerothCorePanel.Localization;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -17,27 +18,29 @@ internal sealed class TrayIcon : IDisposable
     private readonly Forms.ToolStripMenuItem _startItem;
     private readonly Forms.ToolStripMenuItem _stopItem;
     private readonly Forms.ToolStripMenuItem _restartItem;
+    private readonly Forms.ToolStripMenuItem _openItem;
+    private readonly Forms.ToolStripMenuItem _exitItem;
 
     public TrayIcon()
     {
         var menu = new Forms.ContextMenuStrip();
 
-        var openItem = new Forms.ToolStripMenuItem("Abrir painel", null, (_, _) => OpenRequested?.Invoke());
-        openItem.Font = new Drawing.Font(openItem.Font, Drawing.FontStyle.Bold);
-        _startItem = new Forms.ToolStripMenuItem("Start", null, (_, _) => StartRequested?.Invoke());
-        _stopItem = new Forms.ToolStripMenuItem("Stop", null, (_, _) => StopRequested?.Invoke());
-        _restartItem = new Forms.ToolStripMenuItem("Restart", null, (_, _) => RestartRequested?.Invoke());
-        var exitItem = new Forms.ToolStripMenuItem("Sair", null, (_, _) => ExitRequested?.Invoke());
+        _openItem = new Forms.ToolStripMenuItem(string.Empty, null, (_, _) => OpenRequested?.Invoke());
+        _openItem.Font = new Drawing.Font(_openItem.Font, Drawing.FontStyle.Bold);
+        _startItem = new Forms.ToolStripMenuItem(string.Empty, null, (_, _) => StartRequested?.Invoke());
+        _stopItem = new Forms.ToolStripMenuItem(string.Empty, null, (_, _) => StopRequested?.Invoke());
+        _restartItem = new Forms.ToolStripMenuItem(string.Empty, null, (_, _) => RestartRequested?.Invoke());
+        _exitItem = new Forms.ToolStripMenuItem(string.Empty, null, (_, _) => ExitRequested?.Invoke());
 
         menu.Items.AddRange(new Forms.ToolStripItem[]
         {
-            openItem,
+            _openItem,
             new Forms.ToolStripSeparator(),
             _startItem,
             _stopItem,
             _restartItem,
             new Forms.ToolStripSeparator(),
-            exitItem,
+            _exitItem,
         });
 
         _icon = new Forms.NotifyIcon
@@ -56,6 +59,9 @@ internal sealed class TrayIcon : IDisposable
             }
         };
         _icon.BalloonTipClicked += (_, _) => OpenRequested?.Invoke();
+
+        UpdateTexts();
+        L.Changed += UpdateTexts;
     }
 
     public event Action? OpenRequested;
@@ -79,6 +85,16 @@ internal sealed class TrayIcon : IDisposable
         {
             _icon.Text = tooltip;
         }
+    }
+
+    /// <summary>Menu texts in the current language.</summary>
+    public void UpdateTexts()
+    {
+        _openItem.Text = L.T("Tray.Open");
+        _startItem.Text = L.T("Tray.Start");
+        _stopItem.Text = L.T("Tray.Stop");
+        _restartItem.Text = L.T("Tray.Restart");
+        _exitItem.Text = L.T("Tray.Exit");
     }
 
     /// <summary>Colors the right-click menu for the dark or light theme.</summary>
@@ -106,6 +122,7 @@ internal sealed class TrayIcon : IDisposable
 
     public void Dispose()
     {
+        L.Changed -= UpdateTexts;
         _icon.Visible = false;
         _icon.ContextMenuStrip?.Dispose();
         _icon.Icon?.Dispose();

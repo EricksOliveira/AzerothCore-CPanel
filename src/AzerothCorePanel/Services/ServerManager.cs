@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
 
+using AzerothCorePanel.Localization;
+
 namespace AzerothCorePanel.Services;
 
 /// <summary>
@@ -157,7 +159,7 @@ public sealed class ServerManager : IDisposable
         if (server == World && exitCode == RestartExitCode)
         {
             // Someone ran "server restart" in-game or in the console.
-            server.Report("Restart pedido pelo próprio worldserver; iniciando novamente...", false);
+            server.Report(L.T("Srv.RestartRequested"), false);
             TryStart(server);
             return;
         }
@@ -165,7 +167,7 @@ public sealed class ServerManager : IDisposable
         if (exitCode == ShutdownExitCode)
         {
             // A normal shutdown asked from inside the game or the console ("server shutdown").
-            server.Report($"{server.Name} foi desligado por um comando; não será reiniciado.", false);
+            server.Report(L.F("Srv.ShutdownByCommand", server.Name), false);
             return;
         }
 
@@ -173,8 +175,8 @@ public sealed class ServerManager : IDisposable
 
         if (!AutoRestartOnCrash)
         {
-            server.Report($"{server.Name} caiu (código {code}). O reinício automático está desligado.", true);
-            Alert?.Invoke($"{server.Name} caiu", "O reinício automático está desligado.", true);
+            server.Report(L.F("Srv.CrashedNoRestart", server.Name, code), true);
+            Alert?.Invoke(L.F("Alert.Crashed", server.Name), L.T("Alert.AutoRestartOff"), true);
             return;
         }
 
@@ -200,13 +202,10 @@ public sealed class ServerManager : IDisposable
             if (history.Count >= CrashRestartLimit)
             {
                 history.Clear();
-                server.Report(
-                    $"{server.Name} caiu (código {code}) {CrashRestartLimit + 1} vezes em " +
-                    $"{CrashRestartWindow.TotalMinutes:0} minutos. Reinício automático cancelado; " +
-                    "veja o Errors.log e os logs acima.", true);
-                Alert?.Invoke($"{server.Name} caiu de novo",
-                    $"Caiu {CrashRestartLimit + 1} vezes em {CrashRestartWindow.TotalMinutes:0} minutos. " +
-                    "Reinício automático cancelado.", true);
+                server.Report(L.F("Srv.GaveUp", server.Name, code, CrashRestartLimit + 1,
+                    CrashRestartWindow.TotalMinutes.ToString("0")), true);
+                Alert?.Invoke(L.F("Alert.CrashedAgain", server.Name),
+                    L.F("Alert.GaveUp", CrashRestartLimit + 1, CrashRestartWindow.TotalMinutes.ToString("0")), true);
                 return;
             }
 
@@ -217,11 +216,10 @@ public sealed class ServerManager : IDisposable
             _pendingRestarts[server] = cts;
         }
 
-        server.Report(
-            $"{server.Name} caiu (código {code}). Reiniciando em {CrashRestartDelay.TotalSeconds:0}s " +
-            $"(tentativa {attempt} de {CrashRestartLimit})...", true);
-        Alert?.Invoke($"{server.Name} caiu",
-            $"Reiniciando em {CrashRestartDelay.TotalSeconds:0}s (tentativa {attempt} de {CrashRestartLimit}).", true);
+        server.Report(L.F("Srv.Restarting", server.Name, code, CrashRestartDelay.TotalSeconds.ToString("0"), attempt,
+            CrashRestartLimit), true);
+        Alert?.Invoke(L.F("Alert.Crashed", server.Name),
+            L.F("Alert.Restarting", CrashRestartDelay.TotalSeconds.ToString("0"), attempt, CrashRestartLimit), true);
 
         _ = RestartAfterDelayAsync(server, cts);
     }
@@ -237,7 +235,7 @@ public sealed class ServerManager : IDisposable
             // starting authserver now would fail again; wait until worldserver finished loading.
             if (server == Auth && World.State == ServerState.Starting)
             {
-                server.Report("Aguardando o worldserver terminar de carregar para iniciar o authserver...", false);
+                server.Report(L.T("Srv.WaitingWorld"), false);
                 while (World.State == ServerState.Starting)
                 {
                     await Task.Delay(500, cts.Token);
@@ -290,7 +288,7 @@ public sealed class ServerManager : IDisposable
         }
         catch (Exception ex)
         {
-            server.Report($"Falha ao reiniciar: {ex.Message}", true);
+            server.Report(L.F("Srv.RestartFailed", ex.Message), true);
         }
     }
 

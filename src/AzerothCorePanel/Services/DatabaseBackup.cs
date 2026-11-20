@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using AzerothCorePanel.Localization;
 using AzerothCorePanel.Services.MySql;
 
 namespace AzerothCorePanel.Services;
@@ -14,7 +15,7 @@ public sealed record BackupFile(string Path, DateTime Created, long Bytes)
 {
     public string Name => System.IO.Path.GetFileName(Path);
 
-    public string CreatedText => Created.ToString("dd/MM/yyyy HH:mm:ss");
+    public string CreatedText => Created.ToString("G", L.Culture);
 
     public string SizeText => Bytes >= 1024 * 1024 ? $"{Bytes / 1048576.0:0.0} MB" : $"{Bytes / 1024.0:0} KB";
 }
@@ -100,7 +101,7 @@ public static class DatabaseBackup
     {
         if (databases.Count == 0)
         {
-            throw new InvalidOperationException("Escolha pelo menos um banco de dados.");
+            throw new InvalidOperationException(L.T("Backup.NoDatabase"));
         }
 
         var stopwatch = Stopwatch.StartNew();
@@ -184,7 +185,7 @@ public static class DatabaseBackup
             startInfo.ArgumentList.Add(database.Database);
 
             using Process process = Process.Start(startInfo)
-                ?? throw new InvalidOperationException("O mysqldump não iniciou.");
+                ?? throw new InvalidOperationException(L.T("Backup.DumpNotStarted"));
 
             Task<string> errors = process.StandardError.ReadToEndAsync(token);
             try
@@ -201,7 +202,7 @@ public static class DatabaseBackup
             {
                 string message = (await errors).Trim();
                 throw new InvalidOperationException(
-                    $"O mysqldump falhou no banco {database.Database} (código {process.ExitCode}): {message}");
+                    L.F("Backup.DumpFailed", database.Database, process.ExitCode, message));
             }
         }
         finally

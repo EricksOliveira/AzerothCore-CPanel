@@ -65,6 +65,9 @@ public sealed class PanelSettings
 
     public DateTime? LastBackupUtc { get; set; }
 
+    /// <summary>Panel language: "en" (default), "pt" or "es".</summary>
+    public string Language { get; set; } = "en";
+
     /// <summary>"System" (follow Windows), "Light" or "Dark".</summary>
     public string Theme { get; set; } = "System";
 

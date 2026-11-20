@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using AzerothCorePanel.Localization;
 
 namespace AzerothCorePanel.Services.MySql;
 
@@ -151,7 +152,7 @@ internal static class WindowsService
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == ErrorCancelled)
         {
-            throw new InvalidOperationException("A permissão de administrador foi negada.", ex);
+            throw new InvalidOperationException(L.T("Svc.AdminDenied"), ex);
         }
     }
 
@@ -165,9 +166,8 @@ internal static class WindowsService
         {
             if (DateTime.UtcNow > deadline)
             {
-                throw new TimeoutException(
-                    $"O serviço {serviceName} não ficou {Describe(wanted)} em {timeout.TotalSeconds:0}s " +
-                    $"(estado atual: {Describe(state)}).");
+                throw new TimeoutException(L.F("Svc.Timeout", serviceName, Describe(wanted), timeout.TotalSeconds.ToString("0"),
+                    Describe(state)));
             }
 
             await Task.Delay(500, token);
@@ -176,12 +176,12 @@ internal static class WindowsService
 
     public static string Describe(ServiceState state) => state switch
     {
-        ServiceState.Running => "rodando",
-        ServiceState.Stopped => "parado",
-        ServiceState.StartPending => "iniciando",
-        ServiceState.StopPending => "parando",
-        ServiceState.Paused => "pausado",
-        ServiceState.NotFound => "não encontrado",
+        ServiceState.Running => L.T("Svc.Running"),
+        ServiceState.Stopped => L.T("Svc.Stopped"),
+        ServiceState.StartPending => L.T("Svc.Starting"),
+        ServiceState.StopPending => L.T("Svc.Stopping"),
+        ServiceState.Paused => L.T("Svc.Paused"),
+        ServiceState.NotFound => L.T("Svc.NotFound"),
         _ => state.ToString(),
     };
 

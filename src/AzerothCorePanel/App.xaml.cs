@@ -1,4 +1,5 @@
 using System.Windows;
+using AzerothCorePanel.Localization;
 using AzerothCorePanel.Models;
 using AzerothCorePanel.Services;
 using AzerothCorePanel.Views;
@@ -39,9 +40,15 @@ public partial class App : Application
 
         bool launchedAtStartup = e.Args.Contains(WindowsStartup.AutostartArgument, StringComparer.OrdinalIgnoreCase);
 
-        // The theme must be in place before the window is created, so it is drawn with the right colors.
+        // Theme, flags and language must be in place before the window is created, so it is drawn right away.
+        PanelSettings settings = PanelSettings.Load();
         ThemeManager.Initialize(this,
-            Enum.TryParse(PanelSettings.Load().Theme, ignoreCase: true, out AppTheme theme) ? theme : AppTheme.System);
+            Enum.TryParse(settings.Theme, ignoreCase: true, out AppTheme theme) ? theme : AppTheme.System);
+        Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("pack://application:,,,/Localization/Flags.xaml"),
+        });
+        L.Set(L.FromCode(settings.Language));
 
         var window = new MainWindow();
         MainWindow = window;

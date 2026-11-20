@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using AzerothCorePanel.Localization;
 
 namespace AzerothCorePanel.Services;
 
@@ -168,7 +169,7 @@ public sealed class ServerProcess
 
         if (!File.Exists(ExePath))
         {
-            throw new FileNotFoundException($"{Name} não encontrado.", ExePath);
+            throw new FileNotFoundException(L.F("Srv.ExeNotFound", Name), ExePath);
         }
 
         var startInfo = new ProcessStartInfo(ExePath)
@@ -225,7 +226,7 @@ public sealed class ServerProcess
         }
         catch (Exception ex)
         {
-            Report($"Aviso: não foi possível vincular o processo ao painel ({ex.Message}).", true);
+            Report(L.F("Srv.JobWarning", ex.Message), true);
         }
 
         StartedAt = DateTime.Now;
@@ -234,13 +235,13 @@ public sealed class ServerProcess
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
 
-        Report($"{Name} iniciado (PID {process.Id}).", false);
+        Report(L.F("Srv.Started", Name, process.Id), false);
 
         lock (_lock)
         {
             if (logFile is not null)
             {
-                Report($"Lendo os logs de {logFile.Path}", false);
+                Report(L.F("Srv.ReadingLog", logFile.Path), false);
                 _tailer = new LogFileTailer(logFile.Path, startUtc, logFile.TruncatedOnStart,
                     line => OnOutput(line, false));
             }
@@ -262,7 +263,7 @@ public sealed class ServerProcess
         Process? process = _process;
         if (process is null || !IsRunning)
         {
-            throw new InvalidOperationException($"{Name} não está rodando.");
+            throw new InvalidOperationException(L.F("Srv.NotRunning", Name));
         }
 
         WriteInput(process, command + "\n");
@@ -319,14 +320,14 @@ public sealed class ServerProcess
 
         if (ShutdownCommand is not null)
         {
-            Report($"Enviando '{ShutdownCommand}'...", false);
+            Report(L.F("Srv.Sending", ShutdownCommand), false);
             try
             {
                 SendCommand(ShutdownCommand);
             }
             catch (Exception ex)
             {
-                Report($"Não foi possível enviar o comando de desligamento: {ex.Message}", true);
+                Report(L.F("Srv.SendShutdownFailed", ex.Message), true);
             }
 
             if (await Task.WhenAny(exitTask, Task.Delay(timeout)) == exitTask)
@@ -334,7 +335,7 @@ public sealed class ServerProcess
                 return;
             }
 
-            Report($"{Name} não fechou em {timeout.TotalSeconds:0}s; forçando encerramento.", true);
+            Report(L.F("Srv.ForceKill", Name, timeout.TotalSeconds.ToString("0")), true);
         }
 
         try
@@ -417,7 +418,7 @@ public sealed class ServerProcess
         StartedAt = null;
 
         bool unexpected = !stopRequested && exitCode != 0 && exitCode != ServerManager.RestartExitCode;
-        Report($"{Name} encerrado (código de saída {exitCode}).", unexpected);
+        Report(L.F("Srv.Exited", Name, exitCode), unexpected);
         SetState(ServerState.Stopped);
         exitTcs?.TrySetResult(exitCode);
         Exited?.Invoke(this, exitCode, stopRequested);
@@ -425,7 +426,7 @@ public sealed class ServerProcess
 
     /// <summary>Writes a panel message into this server's log.</summary>
     internal void Report(string message, bool isError) =>
-        OutputReceived?.Invoke(this, $"[Painel] {message}", isError);
+        OutputReceived?.Invoke(this, L.Log(message), isError);
 
     private void SetState(ServerState state)
     {

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using AzerothCorePanel.Localization;
 using MySqlConnector;
 
 namespace AzerothCorePanel.Services.MySql;
@@ -35,7 +36,7 @@ public sealed class PortableMySqlController : IMySqlController
 
     public string? DefaultsFile { get; }
 
-    public string Description => $"portátil, {MysqldPath}";
+    public string Description => L.F("MySql.PortableDesc", MysqldPath);
 
     public MySqlState GetState()
     {
@@ -75,7 +76,7 @@ public sealed class PortableMySqlController : IMySqlController
         }
 
         _process?.Dispose();
-        _process = Process.Start(startInfo) ?? throw new InvalidOperationException("O mysqld não iniciou.");
+        _process = Process.Start(startInfo) ?? throw new InvalidOperationException(L.T("MySql.MysqldNotStarted"));
 
         // Running means "accepting connections": wait for the port, and fail fast if mysqld exits.
         DatabaseInfo? account = _account();
@@ -90,7 +91,7 @@ public sealed class PortableMySqlController : IMySqlController
             if (_process.HasExited)
             {
                 throw new InvalidOperationException(
-                    $"O MySQL fechou ao iniciar (código {_process.ExitCode}). Veja o arquivo .err na pasta de dados.");
+                    L.F("MySql.ExitedOnStart", _process.ExitCode));
             }
 
             if (await DatabaseWaiter.WaitAsync(account.Host, port, TimeSpan.FromSeconds(2), token))
@@ -99,7 +100,7 @@ public sealed class PortableMySqlController : IMySqlController
             }
         }
 
-        throw new TimeoutException($"O MySQL não aceitou conexões em {StartTimeout.TotalSeconds:0}s.");
+        throw new TimeoutException(L.F("MySql.NoConnections", StartTimeout.TotalSeconds.ToString("0")));
     }
 
     public async Task StopAsync(CancellationToken token)
@@ -111,7 +112,7 @@ public sealed class PortableMySqlController : IMySqlController
         }
 
         DatabaseInfo account = _account()
-            ?? throw new InvalidOperationException("Não encontrei o LoginDatabaseInfo no worldserver.conf.");
+            ?? throw new InvalidOperationException(L.F("Backup.SettingMissing", "LoginDatabaseInfo"));
 
         _stopping = true;
         try
@@ -131,7 +132,7 @@ public sealed class PortableMySqlController : IMySqlController
             }
             catch (OperationCanceledException) when (!token.IsCancellationRequested)
             {
-                throw new TimeoutException($"O MySQL não fechou em {StopTimeout.TotalSeconds:0}s.");
+                throw new TimeoutException(L.F("MySql.DidNotClose", StopTimeout.TotalSeconds.ToString("0")));
             }
         }
         finally
