@@ -67,6 +67,8 @@ public partial class MainWindow : Window
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
         StartMySqlWithServersCheck.IsChecked = _settings.StartMySqlWithServers;
         ToolTipService.SetShowOnDisabled(MySqlStopButton, true);
+        ConfigEditorView.Ask = ShowMessage;
+        ConfigEditorView.Saved += OnConfigSaved;
         SoapUserBox.Text = _settings.SoapUser;
         SoapPasswordBox.Password = SecretProtector.Unprotect(_settings.SoapPasswordProtected);
         ApplyPaths();
@@ -229,6 +231,7 @@ public partial class MainWindow : Window
 
         _manager.Auth.ExePath = _settings.AuthserverPath;
         _manager.World.ExePath = _settings.WorldserverPath;
+        ConfigEditorView.SetServerPaths(_settings.AuthserverPath, _settings.WorldserverPath, reload: true);
 
         // The LoginDatabaseInfo account is read when needed, so edits to worldserver.conf are picked up.
         _mySql = MySqlDetector.Detect(_settings.ServerFolder,
@@ -266,7 +269,7 @@ public partial class MainWindow : Window
             dialog.InitialDirectory = _settings.ServerFolder;
         }
 
-        if (dialog.ShowDialog(this) != true)
+        if (dialog.ShowDialog(this) != true || !ConfigEditorView.ConfirmDiscardOrSave())
         {
             return;
         }
@@ -603,8 +606,39 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnConfigSaved(string path)
+    {
+        _worldLog.Append($"[Painel] Configuração salva: {path} (cópia anterior em {Path.GetFileName(path)}.bak).", false);
+
+        // SOAP, database and log settings come from these files.
+        UpdateSoapStatus();
+        UpdateBackupView();
+
+        string name = Path.GetFileNameWithoutExtension(path);
+        bool running = name.Equals("worldserver", StringComparison.OrdinalIgnoreCase)
+            ? _manager.World.IsRunning
+            : _manager.Auth.IsRunning;
+
+        if (running)
+        {
+            ShowMessage($"Configuração salva. Reinicie o {name} (Restart) para as mudanças valerem.",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     protected override async void OnClosing(CancelEventArgs e)
     {
+        // Unsaved .conf edits: ask once, before anything else (the answer may cancel closing).
+        if (!_closeConfirmed && ConfigEditorView.HasChanges)
+        {
+            RestoreFromTray();
+            if (!ConfigEditorView.ConfirmDiscardOrSave())
+            {
+                e.Cancel = true;
+                return;
+            }
+        }
+
         if (_closeConfirmed || !_manager.AnyRunning)
         {
             base.OnClosing(e);

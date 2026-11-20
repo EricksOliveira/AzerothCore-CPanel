@@ -39,9 +39,11 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   MySQL junto com o Start
 - [x] Comandos GM via SOAP: aba com conta GM, atalhos, histórico, e "Expulsar" na lista de jogadores
 - [x] Backup do banco de dados: manual ou agendado (1h, 6h, 12h, diário), em .zip, mantendo os últimos N
+- [x] Editor do `worldserver.conf` e do `authserver.conf`: tabela com busca, descrição de cada opção e padrão do `.dist`
 
 ### Próximas versões
-- [ ] Editor do `worldserver.conf` e do `authserver.conf`
+Todos os itens planejados estão prontos. Ideias e sugestões são bem-vindas: abra uma
+[issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
 
 ## Requisitos
 
@@ -93,6 +95,12 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   por banco. Pode ser manual ou automático (a cada 1, 6 ou 12 horas, ou uma vez por dia), e o painel apaga os
   backups mais antigos além dos N últimos. A pasta padrão é `Backups` dentro da pasta do servidor. Funciona com os
   servidores rodando (`--single-transaction`). Para restaurar: `mysql -u root -p acore_char < acore_char.sql`.
+- **Configuração**: a aba **Configuração** edita o `worldserver.conf` e o `authserver.conf` numa tabela (seção, opção,
+  valor e padrão do `.conf.dist`), com busca no nome, valor e descrição, e a descrição completa da opção
+  selecionada. **Só diferentes do padrão** mostra o que foi mudado. Opções que existem no `.dist` mas faltam no
+  arquivo (comum depois de atualizar o core) aparecem em cinza e são adicionadas no fim ao mudar o valor. Salvar
+  troca só as linhas alteradas, mantendo comentários e espaçamento, e guarda a versão anterior em `.conf.bak`. Se o
+  `.conf` não existir, **Criar a partir do .dist** copia o padrão.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
