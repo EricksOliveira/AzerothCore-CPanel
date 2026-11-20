@@ -34,10 +34,10 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Iniciar o painel com o Windows (já na bandeja), com opção de iniciar os servidores depois que o MySQL
   estiver pronto
 - [x] Uso de CPU e RAM de cada servidor, atualizado a cada segundo
+- [x] Jogadores online: total no status e na bandeja, e aba com nome, nível, raça, classe, facção e mapa
 
 ### Próximas versões
 - [ ] Iniciar e parar o MySQL do Repack
-- [ ] Jogadores online
 - [ ] Console para enviar comandos GM (via SOAP)
 - [ ] Backup agendado do banco de dados
 - [ ] Editor do `worldserver.conf` e do `authserver.conf`
@@ -70,6 +70,9 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
   chave `Run` do registro do seu usuário, sem precisar de administrador.
 - **CPU e RAM**: ao lado do status de cada servidor. A CPU soma todos os núcleos (100% = todos ocupados, como no
   Gerenciador de Tarefas). A RAM é a memória física em uso (working set); passe o mouse para ver o pico.
+- **Jogadores online**: enquanto o worldserver está online, o painel consulta o banco de personagens a cada 15
+  segundos (usando o `CharacterDatabaseInfo` do `worldserver.conf`). O total aparece no status e na bandeja, e a
+  aba **Jogadores** mostra a lista.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
 
@@ -85,6 +88,10 @@ Para gerar um único `.exe` que roda sem instalar o .NET:
 dotnet publish src/AzerothCorePanel -c Release -r win-x64 --self-contained -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 ```
+
+## Dependências
+
+- [MySqlConnector](https://mysqlconnector.net/) (MIT), para consultar o banco de personagens.
 
 ## Licença
 

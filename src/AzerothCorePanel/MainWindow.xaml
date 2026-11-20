@@ -72,7 +72,7 @@
 
     <!-- Controls and status -->
     <DockPanel Grid.Row="1" Margin="0,12,0,12" LastChildFill="False">
-      <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+      <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
         <Button x:Name="StartButton" Content="▶ Start" Click="StartButton_Click" />
         <Button x:Name="StopButton" Content="■ Stop" Margin="8,0,0,0" Click="StopButton_Click" />
         <Button x:Name="RestartButton" Content="⟳ Restart" Margin="8,0,0,0" Click="RestartButton_Click" />
@@ -86,6 +86,7 @@
           <ColumnDefinition Width="Auto" MinWidth="100" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -115,6 +116,9 @@
                    Text="CPU —" ToolTip="Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)" />
         <TextBlock x:Name="AuthRamText" Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
+
+        <TextBlock x:Name="PlayersStatusText" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Margin="6,1,0,1"
+                   VerticalAlignment="Center" Text="Jogadores online: —" />
       </Grid>
     </DockPanel>
 
@@ -130,6 +134,25 @@
                      ToolTip="Comando do console do worldserver, por exemplo: server info" />
           </DockPanel>
           <TextBox x:Name="WorldLogBox" Style="{StaticResource LogBoxStyle}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem x:Name="PlayersTab" Header="Jogadores">
+        <DockPanel>
+          <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+            <Button DockPanel.Dock="Right" Content="Atualizar" Click="RefreshPlayersButton_Click" />
+            <TextBlock x:Name="PlayersInfoText" VerticalAlignment="Center" Text="O worldserver não está rodando." />
+          </DockPanel>
+          <DataGrid x:Name="PlayersGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                    HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Nome" Binding="{Binding Name}" Width="2*" />
+              <DataGridTextColumn Header="Nível" Binding="{Binding Level}" Width="Auto" />
+              <DataGridTextColumn Header="Raça" Binding="{Binding RaceName}" Width="*" />
+              <DataGridTextColumn Header="Classe" Binding="{Binding ClassName}" Width="*" />
+              <DataGridTextColumn Header="Facção" Binding="{Binding Faction}" Width="Auto" />
+              <DataGridTextColumn Header="Mapa" Binding="{Binding MapName}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
         </DockPanel>
       </TabItem>
       <TabItem Header="Authserver">

@@ -22,7 +22,11 @@ public partial class MainWindow : Window
     private readonly LogPane _worldLog;
     private readonly DispatcherTimer _uiTimer;
     private readonly DispatcherTimer _metricsTimer;
+    private readonly DispatcherTimer _playersTimer;
     private readonly CancellationTokenSource _lifetime = new();
+    private bool _playersRefreshing;
+    private int? _onlinePlayers;
+    private string? _lastPlayersError;
     private bool _busy;
     private bool _closeConfirmed;
     private bool _closed;
@@ -84,6 +88,10 @@ public partial class MainWindow : Window
         _metricsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _metricsTimer.Tick += (_, _) => UpdateMetrics();
         _metricsTimer.Start();
+
+        _playersTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+        _playersTimer.Tick += async (_, _) => await RefreshPlayersAsync();
+        _playersTimer.Start();
 
         UpdateUi();
     }
@@ -462,6 +470,7 @@ public partial class MainWindow : Window
     private void OnWorldStateChanged(ServerProcess world)
     {
         UpdateUi();
+        _ = RefreshPlayersAsync();
 
         // Only worth a notification when the panel is not on screen.
         if (world.State == ServerState.Running && !IsVisible)
@@ -506,6 +515,7 @@ public partial class MainWindow : Window
         _lifetime.Cancel();
         _uiTimer.Stop();
         _metricsTimer.Stop();
+        _playersTimer.Stop();
         _tray.Dispose();
         _manager.Dispose();
         base.OnClosed(e);
@@ -552,7 +562,8 @@ public partial class MainWindow : Window
 
         _tray.Update(canStart, canStop, canRestart,
             $"AzerothCore CPanel\n{_manager.World.Name}: {StateLabel(_manager.World).Label}\n" +
-            $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}");
+            $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}" +
+            (_onlinePlayers is int online ? $"\nJogadores online: {online}" : string.Empty));
     }
 
     private void UpdateStatus()
@@ -582,6 +593,95 @@ public partial class MainWindow : Window
 
         dot.Fill = color;
         text.Text = $"{server.Name}: {label}";
+    }
+
+    private async void RefreshPlayersButton_Click(object sender, RoutedEventArgs e) => await RefreshPlayersAsync();
+
+    private async Task RefreshPlayersAsync()
+    {
+        if (_playersRefreshing || _closed)
+        {
+            return;
+        }
+
+        // characters.online is only meaningful while worldserver runs (it resets it on startup).
+        if (_manager.World.State != ServerState.Running)
+        {
+            ShowPlayers(null, null);
+            return;
+        }
+
+        string? connectionString = CharacterDatabase.BuildConnectionString(_settings.WorldserverPath);
+        if (connectionString is null)
+        {
+            ShowPlayers(null, "não encontrei o CharacterDatabaseInfo no worldserver.conf.");
+            return;
+        }
+
+        _playersRefreshing = true;
+        try
+        {
+            IReadOnlyList<OnlinePlayer> players =
+                await CharacterDatabase.GetOnlinePlayersAsync(connectionString, _lifetime.Token);
+            ShowPlayers(players, null);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            ShowPlayers(null, ex.Message);
+        }
+        finally
+        {
+            _playersRefreshing = false;
+        }
+    }
+
+    private void ShowPlayers(IReadOnlyList<OnlinePlayer>? players, string? error)
+    {
+        if (_closed)
+        {
+            return;
+        }
+
+        PlayersGrid.ItemsSource = players ?? Array.Empty<OnlinePlayer>();
+        _onlinePlayers = players?.Count;
+        PlayersTab.Header = players is null ? "Jogadores" : $"Jogadores ({players.Count})";
+
+        if (error is not null)
+        {
+            PlayersStatusText.Text = "Jogadores online: erro";
+            PlayersStatusText.ToolTip = error;
+            PlayersInfoText.Text = "Não foi possível consultar o banco characters: " + error;
+
+            // Log each different error once, not every 15 seconds.
+            if (error != _lastPlayersError)
+            {
+                _worldLog.Append("[Painel] Jogadores online: não foi possível consultar o banco: " + error, true);
+            }
+
+            _lastPlayersError = error;
+            return;
+        }
+
+        _lastPlayersError = null;
+
+        if (players is null)
+        {
+            PlayersStatusText.Text = "Jogadores online: —";
+            PlayersStatusText.ToolTip = null;
+            PlayersInfoText.Text = "O worldserver não está rodando.";
+            return;
+        }
+
+        int alliance = players.Count(p => p.Faction == "Aliança");
+        string updated = $"atualizado às {DateTime.Now:HH:mm:ss} (a cada 15s)";
+        PlayersStatusText.Text = $"Jogadores online: {players.Count}";
+        PlayersStatusText.ToolTip = $"Aliança: {alliance} · Horda: {players.Count - alliance} — {updated}";
+        PlayersInfoText.Text = players.Count == 0
+            ? $"Nenhum jogador online — {updated}"
+            : $"{players.Count} online (Aliança: {alliance} · Horda: {players.Count - alliance}) — {updated}";
     }
 
     private void UpdateMetrics()
