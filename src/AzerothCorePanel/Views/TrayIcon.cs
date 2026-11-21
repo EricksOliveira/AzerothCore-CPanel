@@ -149,7 +149,7 @@ internal sealed class TrayIcon : IDisposable
 
     private static Drawing.Icon LoadIcon()
     {
-        var uri = new Uri("pack://application:,,,/Assets/app.ico");
+        var uri = new Uri("pack://application:,,,/AzerothCorePanel;component/Assets/app.ico");
         using Stream stream = Application.GetResourceStream(uri)!.Stream;
 
         // Picks the frame that matches the tray size for the current DPI (16, 20, 24 or 32 px).

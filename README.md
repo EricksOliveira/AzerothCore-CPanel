@@ -2,129 +2,127 @@
 
 # AzerothCore CPanel
 
-Painel de controle para Windows feito para servidores [AzerothCore](https://www.azerothcore.org/)
-(World of Warcraft 3.3.5a). Em vez de abrir o `authserver.exe` e o `worldserver.exe` na mão,
-o painel cuida disso com um clique.
+**English** · [Português](README.pt-BR.md) · [Español](README.es.md)
 
-> **Status:** versão 1.1 disponível.
+A Windows control panel made for [AzerothCore](https://www.azerothcore.org/) servers (World of Warcraft 3.3.5a).
+Instead of opening `authserver.exe` and `worldserver.exe` by hand, the panel takes care of it with one click.
+
+> **Status:** version 1.1 available.
 
 ## Download
 
-Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).
-É um arquivo único e não precisa instalar o .NET.
+Download `AzerothCorePanel.exe` from the [releases page](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).
+It is a single file and does not need .NET to be installed.
 
-1. Abra o `AzerothCorePanel.exe`
-2. Clique em **Procurar...** e escolha a pasta da Build ou do Repack
-3. Clique em **Start**
+1. Open `AzerothCorePanel.exe`
+2. Click **Browse...** and choose the Build or Repack folder
+3. Click **Start**
 
-## Funcionalidades
+## Features
 
-### Pronto
-- [x] Escolher a pasta da Build ou do Repack; o painel encontra o `authserver.exe` e o `worldserver.exe`
-- [x] **Start**: inicia o Authserver e depois o Worldserver
-- [x] **Stop**: desligamento limpo (`server shutdown 1`), sem perder dados dos personagens
-- [x] **Restart**: para e inicia os dois servidores
-- [x] Logs ao vivo de cada processo, em abas
-- [x] Campo para enviar comandos ao console do worldserver
-- [x] Reinicia o worldserver sozinho quando ele pede restart (`server restart`, código de saída 2)
-- [x] Se o painel fechar ou travar, os servidores não ficam rodando escondidos (Job Object)
-- [x] Auto-restart em caso de crash, com limite de tentativas para não ficar em loop
-- [x] Ícone na bandeja do sistema: minimiza para perto do relógio, menu com Start/Stop/Restart e avisos quando
-  um servidor cai
-- [x] Iniciar o painel com o Windows (já na bandeja), com opção de iniciar os servidores depois que o MySQL
-  estiver pronto
-- [x] Uso de CPU e RAM de cada servidor, atualizado a cada segundo
-- [x] Jogadores online: total no status e na bandeja, e aba com nome, nível, raça, classe, facção e mapa
-- [x] Controle do MySQL: status, iniciar e parar (MySQL portátil do Repack ou serviço do Windows), e iniciar o
-  MySQL junto com o Start
-- [x] Comandos GM via SOAP: aba com conta GM, atalhos, histórico, e "Expulsar" na lista de jogadores
-- [x] Backup do banco de dados: manual ou agendado (1h, 6h, 12h, diário), em .zip, mantendo os últimos N
-- [x] Editor do `worldserver.conf` e do `authserver.conf`: tabela com busca, descrição de cada opção e padrão do `.dist`
-- [x] Tema escuro: Claro, Escuro ou Seguir o Windows, trocando na hora
+- [x] Choose the Build or Repack folder; the panel finds `authserver.exe` and `worldserver.exe`
+- [x] **Start**: starts authserver, then worldserver
+- [x] **Stop**: clean shutdown (`server shutdown 1`), without losing character data
+- [x] **Restart**: stops and starts both servers
+- [x] Live logs for each server, in tabs, and a box to send worldserver console commands
+- [x] Restarts worldserver by itself when it asks for a restart (`server restart`, exit code 2)
+- [x] If the panel closes or crashes, the servers are not left running hidden (Job Object)
+- [x] Automatic restart after a crash, with a limit so it does not loop
+- [x] System tray icon: minimizes next to the clock, menu with Start/Stop/Restart, and notifications when a server
+  crashes
+- [x] Start the panel with Windows (straight to the tray), optionally starting the servers once MySQL is ready
+- [x] CPU and RAM use of each server, refreshed every second
+- [x] Online players: total in the status area and the tray, and a tab with name, level, race, class, faction and map
+- [x] MySQL control: state, start and stop (portable MySQL in the Repack or a Windows service), and start MySQL
+  together with Start
+- [x] GM commands through SOAP: tab with GM account, shortcuts, history, and "Kick" in the players list
+- [x] Database backup: on demand or scheduled (1h, 6h, 12h, daily), as .zip, keeping the last N
+- [x] `worldserver.conf` and `authserver.conf` editor: searchable table with each option's description and the
+  `.dist` default
+- [x] Dark theme: Light, Dark or Follow Windows, switching at once
+- [x] Three languages: English (default), Portuguese and Spanish, picked from a flag button
 
-### Próximas versões
-Todos os itens planejados estão prontos. Ideias e sugestões são bem-vindas: abra uma
-[issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
+Ideas and suggestions are welcome: open an [issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
 
-## Requisitos
+## Requirements
 
-- Windows 10 ou superior
-- `Console.Enable = 1` no `worldserver.conf` (padrão). Sem o console, o Stop não consegue pedir um
-  desligamento limpo e encerra o processo à força depois do tempo limite.
-- Para compilar: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Windows 10 or later
+- `Console.Enable = 1` in `worldserver.conf` (the default). Without the console, Stop cannot ask for a clean
+  shutdown and ends the process by force after the timeout.
+- To build: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-## Como funciona
+## How it works
 
-- O painel inicia cada servidor com a pasta do `.exe` como pasta de trabalho, para o AzerothCore achar a
-  pasta `configs`.
-- **Stop** envia `server shutdown 1` ao worldserver e espera ele fechar (60 segundos por padrão). Se não
-  fechar, o processo é encerrado à força. O authserver é encerrado direto, porque não guarda dados de jogo.
-- **Reiniciar servidor se cair** (ligado por padrão): se um servidor fechar sem ninguém pedir, o painel o
-  inicia de novo depois de 5 segundos. Depois de 3 quedas em 5 minutos ele desiste, porque o problema
-  provavelmente é de configuração ou do banco de dados. Um `server shutdown` dado no jogo ou no console não
-  conta como queda.
-- **Bandeja do sistema**: o ícone fica perto do relógio enquanto o painel está aberto. Clique nele para abrir o
-  painel; o botão direito mostra Start, Stop, Restart e Sair. Com **Minimizar para a bandeja** ligado (padrão),
-  minimizar tira o painel da barra de tarefas. Quando um servidor cai, aparece uma notificação. No Windows 11 o
-  ícone começa na área de ícones ocultos (a seta ^ ao lado do relógio); arraste-o para a barra para deixá-lo
-  sempre visível.
-- **Iniciar com o Windows**: com **Iniciar o painel com o Windows** ligado, o painel abre sozinho quando você entra
-  no Windows, direto na bandeja. Com **E iniciar os servidores**, ele espera o MySQL aceitar conexões (até 3
-  minutos, lendo o endereço do `LoginDatabaseInfo` no `worldserver.conf`) e inicia os servidores. A opção usa a
-  chave `Run` do registro do seu usuário, sem precisar de administrador.
-- **CPU e RAM**: ao lado do status de cada servidor. A CPU soma todos os núcleos (100% = todos ocupados, como no
-  Gerenciador de Tarefas). A RAM é a memória física em uso (working set); passe o mouse para ver o pico.
-- **Jogadores online**: enquanto o worldserver está online, o painel consulta o banco de personagens a cada 15
-  segundos (usando o `CharacterDatabaseInfo` do `worldserver.conf`). O total aparece no status e na bandeja, e a
-  aba **Jogadores** mostra a lista.
-- **MySQL**: o painel procura um `mysqld.exe` dentro da pasta do servidor (MySQL portátil, comum em Repacks) e,
-  se não achar, um serviço do Windows de MySQL ou MariaDB. A linha **MySQL** no status mostra o estado e tem os
-  botões **Iniciar** e **Parar** (o Parar só fica ativo com os servidores parados). Com **Iniciar o MySQL junto
-  com os servidores** (padrão), o Start inicia o MySQL primeiro se ele estiver parado. O Stop não desliga o MySQL.
-  - MySQL portátil: é iniciado com o `my.ini` da pasta dele e desligado com `SHUTDOWN`, usando a conta do
-    `LoginDatabaseInfo`. Ele continua rodando se o painel fechar, para não ser interrompido no meio de uma escrita.
-  - Serviço do Windows: iniciar e parar serviços precisa de administrador; se o painel não estiver como
-    administrador, o Windows pede permissão (UAC).
-- **Comandos GM (SOAP)**: a aba **Comandos GM** executa comandos pelo SOAP do worldserver e mostra a resposta de
-  cada um. Funciona mesmo com o worldserver aberto fora do painel. Precisa de `SOAP.Enabled = 1` no
-  `worldserver.conf` (o botão **Ativar SOAP** muda só essa linha; reinicie o worldserver depois) e de uma conta
-  do jogo com GM nível 3. A senha fica salva criptografada para o seu usuário do Windows (DPAPI). Tem atalhos
-  (info do servidor, salvar personagens, anunciar, expulsar, criar conta, dar GM, recarregar config), histórico
-  com as setas e, na aba **Jogadores**, o clique direito expulsa um jogador.
-- **Backup**: a aba **Backup** usa o `mysqldump` (achado ao lado do MySQL) para salvar os bancos escolhidos (contas e
-  personagens por padrão; o world é grande e pode ser recriado) num `backup_AAAA-MM-DD_HH-MM-SS.zip`, com um `.sql`
-  por banco. Pode ser manual ou automático (a cada 1, 6 ou 12 horas, ou uma vez por dia), e o painel apaga os
-  backups mais antigos além dos N últimos. A pasta padrão é `Backups` dentro da pasta do servidor. Funciona com os
-  servidores rodando (`--single-transaction`). Para restaurar: `mysql -u root -p acore_char < acore_char.sql`.
-- **Configuração**: a aba **Configuração** edita o `worldserver.conf` e o `authserver.conf` numa tabela (seção, opção,
-  valor e padrão do `.conf.dist`), com busca no nome, valor e descrição, e a descrição completa da opção
-  selecionada. **Só diferentes do padrão** mostra o que foi mudado. Opções que existem no `.dist` mas faltam no
-  arquivo (comum depois de atualizar o core) aparecem em cinza e são adicionadas no fim ao mudar o valor. Salvar
-  troca só as linhas alteradas, mantendo comentários e espaçamento, e guarda a versão anterior em `.conf.bak`. Se o
-  `.conf` não existir, **Criar a partir do .dist** copia o padrão.
-- **Tema**: no rodapé, **Tema** escolhe Claro, Escuro ou Seguir o Windows (padrão). A troca é na hora, sem
-  reiniciar, e inclui a barra de título e o menu da bandeja. No modo Seguir o Windows, o painel acompanha a
-  configuração "Escolha o modo de aplicativo" do Windows enquanto está aberto.
-- Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
-- As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.
+- Each server starts with its `.exe` folder as the working folder, so AzerothCore finds the `configs` folder.
+- **Stop** sends `server shutdown 1` to worldserver and waits for it to close (60 seconds by default). If it does
+  not close, the process is ended by force. authserver is ended directly, since it keeps no game data.
+- **Restart a server that crashes** (on by default): if a server closes without being asked to, the panel starts
+  it again after 5 seconds. After 3 crashes in 5 minutes it gives up, since the problem is probably the
+  configuration or the database. A `server shutdown` given in game or in the console does not count as a crash.
+- **System tray**: the icon stays next to the clock while the panel is open. Click it to open the panel; right-click
+  shows Start, Stop, Restart and Exit. With **Minimize to tray** on (the default), minimizing removes the panel from
+  the taskbar. A notification appears when a server crashes. On Windows 11 the icon starts in the hidden icons area
+  (the ^ arrow next to the clock); drag it to the taskbar to keep it visible.
+- **Start with Windows**: with **Start the panel with Windows** on, the panel opens by itself when you sign in,
+  straight to the tray. With **And start the servers**, it waits until MySQL accepts connections (up to 3 minutes,
+  reading the address from `LoginDatabaseInfo` in `worldserver.conf`) and starts the servers. It uses the `Run`
+  registry key of your user, without administrator rights.
+- **CPU and RAM**: next to each server's state. CPU adds up all cores (100% = every core busy, like Task Manager).
+  RAM is the physical memory in use (working set); hover to see the peak.
+- **Online players**: while worldserver is online, the panel queries the characters database every 15 seconds
+  (using `CharacterDatabaseInfo` from `worldserver.conf`). The total shows in the status area and the tray, and the
+  **Players** tab shows the list.
+- **MySQL**: the panel looks for a `mysqld.exe` inside the server folder (portable MySQL, common in Repacks) and,
+  if there is none, for a MySQL or MariaDB Windows service. The **MySQL** row in the status area shows its state and
+  has **Start** and **Stop** buttons (Stop is only enabled while the servers are stopped). With **Start MySQL
+  together with the servers** (the default), Start starts MySQL first when it is stopped. Stop does not stop MySQL.
+  - Portable MySQL: started with the `my.ini` of its folder and shut down with `SHUTDOWN`, using the
+    `LoginDatabaseInfo` account. It keeps running if the panel closes, so it is never cut off in the middle of a
+    write.
+  - Windows service: starting and stopping services needs administrator rights; if the panel is not running as
+    administrator, Windows asks for permission (UAC).
+- **GM commands (SOAP)**: the **GM commands** tab runs commands through worldserver's SOAP service and shows each
+  answer. It also works when worldserver was started outside the panel. It needs `SOAP.Enabled = 1` in
+  `worldserver.conf` (the **Enable SOAP in worldserver.conf** button changes only that line; restart worldserver
+  afterwards) and a game account with GM level 3. The password is saved encrypted for your Windows user (DPAPI).
+  There are shortcuts (server info, save characters, announce, kick, create account, grant GM, reload config),
+  history with the arrow keys and, in the **Players** tab, right-click kicks a player.
+- **Backup**: the **Backup** tab uses `mysqldump` (found next to MySQL) to save the chosen databases (accounts and
+  characters by default; world is large and can be rebuilt) into a `backup_YYYY-MM-DD_HH-MM-SS.zip` with one `.sql`
+  per database. It can run on demand or automatically (every 1, 6 or 12 hours, or once a day), and the panel deletes
+  backups older than the last N. The default folder is `Backups` inside the server folder. It works while the
+  servers run (`--single-transaction`). To restore: `mysql -u root -p acore_char < acore_char.sql`.
+- **Configuration**: the **Configuration** tab edits `worldserver.conf` and `authserver.conf` in a table (section,
+  option, value and the `.conf.dist` default), with search over name, value and description, and the full
+  description of the selected option. **Only different from default** shows what was changed. Options that exist in
+  the `.dist` but are missing from the file (common after updating the core) are shown in gray and appended at the
+  end when their value is changed. Saving replaces only the edited lines, keeping comments and spacing, and keeps
+  the previous version as `.conf.bak`. If the `.conf` does not exist, **Create from .dist** copies the default.
+- **Theme**: **Theme** in the footer picks Light, Dark or Follow Windows (the default). It switches at once, without
+  restarting, including the title bar and the tray menu. In Follow Windows mode the panel follows the Windows app
+  mode setting while it is open.
+- **Language**: the flag button in the footer opens a menu with English (default), Portuguese and Spanish. The
+  whole panel switches at once, including notifications, the tray menu and number and date formats.
+- Only one panel runs at a time: opening it again brings up the one already open (or in the tray).
+- Settings are stored in `%APPDATA%\AzerothCorePanel\settings.json`.
 
-## Como compilar
+## Building
 
 ```powershell
 dotnet build src/AzerothCorePanel
 ```
 
-Para gerar um único `.exe` que roda sem instalar o .NET:
+To produce a single `.exe` that runs without installing .NET:
 
 ```powershell
 dotnet publish src/AzerothCorePanel -c Release -r win-x64 --self-contained -p:PublishSingleFile=true `
   -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 ```
 
-## Dependências
+## Dependencies
 
-- [MySqlConnector](https://mysqlconnector.net/) (MIT), para consultar o banco de personagens.
+- [MySqlConnector](https://mysqlconnector.net/) (MIT), to query the characters database.
 
-## Licença
+## License
 
 [MIT](LICENSE)

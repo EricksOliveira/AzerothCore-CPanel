@@ -18,9 +18,9 @@ public enum AppTheme
 /// </summary>
 public static class ThemeManager
 {
-    private static readonly Uri LightColors = new("pack://application:,,,/Themes/Light.xaml");
-    private static readonly Uri DarkColors = new("pack://application:,,,/Themes/Dark.xaml");
-    private static readonly Uri Controls = new("pack://application:,,,/Themes/Controls.xaml");
+    private static readonly Uri LightColors = new("pack://application:,,,/AzerothCorePanel;component/Themes/Light.xaml");
+    private static readonly Uri DarkColors = new("pack://application:,,,/AzerothCorePanel;component/Themes/Dark.xaml");
+    private static readonly Uri Controls = new("pack://application:,,,/AzerothCorePanel;component/Themes/Controls.xaml");
 
     // DWMWA_USE_IMMERSIVE_DARK_MODE: dark title bar on Windows 10 2004+ and Windows 11.
     private const int DwmUseImmersiveDarkMode = 20;

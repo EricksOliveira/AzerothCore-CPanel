@@ -46,7 +46,7 @@ public partial class App : Application
             Enum.TryParse(settings.Theme, ignoreCase: true, out AppTheme theme) ? theme : AppTheme.System);
         Resources.MergedDictionaries.Add(new ResourceDictionary
         {
-            Source = new Uri("pack://application:,,,/Localization/Flags.xaml"),
+            Source = new Uri("pack://application:,,,/AzerothCorePanel;component/Localization/Flags.xaml"),
         });
         L.Set(L.FromCode(settings.Language));
 

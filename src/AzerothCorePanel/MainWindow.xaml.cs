@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         SoapUserBox.Text = _settings.SoapUser;
         SoapPasswordBox.Password = SecretProtector.Unprotect(_settings.SoapPasswordProtected);
         ApplyPaths();
+        ShowPlayers(null, null);
 
         _manager.Auth.OutputReceived += (_, line, isError) => _authLog.Append(line, isError);
         _manager.World.OutputReceived += (_, line, isError) => _worldLog.Append(line, isError);
