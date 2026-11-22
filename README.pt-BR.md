@@ -16,6 +16,10 @@ o painel cuida disso com um clique.
 | --- | --- |
 | ![Janela principal, tema escuro](assets/screenshots/panel-dark.png) | ![Editor de configuração](assets/screenshots/config-editor.png) |
 
+| Logs coloridos por nível | Filtro de avisos |
+| --- | --- |
+| ![Log do worldserver com linhas INFO, WARN e ERROR](assets/screenshots/logs-all.png) | ![Log do worldserver mostrando só os avisos](assets/screenshots/logs-warnings.png) |
+
 > Os prints mostram o painel em inglês, o idioma padrão. Para usar em português, clique na bandeira no canto superior
 > direito.
 

@@ -15,6 +15,10 @@ Instead of opening `authserver.exe` and `worldserver.exe` by hand, the panel tak
 | --- | --- |
 | ![Main window, dark theme](assets/screenshots/panel-dark.png) | ![Configuration editor](assets/screenshots/config-editor.png) |
 
+| Logs colored by level | Warnings filter |
+| --- | --- |
+| ![Worldserver log with INFO, WARN and ERROR lines](assets/screenshots/logs-all.png) | ![Worldserver log showing only the warnings](assets/screenshots/logs-warnings.png) |
+
 ## Download
 
 Download `AzerothCorePanel.exe` from the [releases page](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).

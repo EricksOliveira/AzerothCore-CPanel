@@ -16,6 +16,10 @@ encarga de todo con un clic.
 | --- | --- |
 | ![Ventana principal, tema oscuro](assets/screenshots/panel-dark.png) | ![Editor de configuración](assets/screenshots/config-editor.png) |
 
+| Logs con colores por nivel | Filtro de advertencias |
+| --- | --- |
+| ![Log del worldserver con líneas INFO, WARN y ERROR](assets/screenshots/logs-all.png) | ![Log del worldserver mostrando solo las advertencias](assets/screenshots/logs-warnings.png) |
+
 > Las capturas muestran el panel en inglés, el idioma por defecto. Para usarlo en español, haz clic en la bandera de la
 > esquina superior derecha.
 
