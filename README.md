@@ -40,8 +40,8 @@ It is a single file and does not need .NET to be installed.
 - [x] Database backup: on demand or scheduled (1h, 6h, 12h, daily), as .zip, keeping the last N
 - [x] `worldserver.conf` and `authserver.conf` editor: searchable table with each option's description and the
   `.dist` default
-- [x] Dark theme: Light, Dark or Follow Windows, switching at once
-- [x] Three languages: English (default), Portuguese and Spanish, picked from a flag button
+- [x] Light and dark themes: sun and moon buttons in the top-right corner, switching at once
+- [x] Three languages: English (default), Portuguese and Spanish, picked from the flag button in the top-right corner
 
 Ideas and suggestions are welcome: open an [issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
 
@@ -101,10 +101,9 @@ Ideas and suggestions are welcome: open an [issue](https://github.com/EricksOliv
   the `.dist` but are missing from the file (common after updating the core) are shown in gray and appended at the
   end when their value is changed. Saving replaces only the edited lines, keeping comments and spacing, and keeps
   the previous version as `.conf.bak`. If the `.conf` does not exist, **Create from .dist** copies the default.
-- **Theme**: **Theme** in the footer picks Light, Dark or Follow Windows (the default). It switches at once, without
-  restarting, including the title bar and the tray menu. In Follow Windows mode the panel follows the Windows app
-  mode setting while it is open.
-- **Language**: the flag button in the footer opens a menu with English (default), Portuguese and Spanish. The
+- **Theme**: the sun (light) and moon (dark) buttons in the top-right corner switch the theme at once, without
+  restarting, including the title bar and the tray menu. Until you pick one, the panel follows the Windows app mode.
+- **Language**: the flag button in the top-right corner opens a menu with English (default), Portuguese and Spanish. The
   whole panel switches at once, including notifications, the tray menu and number and date formats.
 - Only one panel runs at a time: opening it again brings up the one already open (or in the tray).
 - Settings are stored in `%APPDATA%\AzerothCorePanel\settings.json`.

@@ -14,6 +14,7 @@ internal static class Strings
         ["Common.Browse"] = S("Procurar...", "Browse...", "Examinar..."),
         ["Common.Save"] = S("Salvar", "Save", "Guardar"),
         ["Common.Refresh"] = S("Atualizar", "Refresh", "Actualizar"),
+        ["Common.Error"] = S("Erro", "Error", "Error"),
         ["Log.Prefix"] = S("[Painel]", "[Panel]", "[Panel]"),
         ["Language.Tip"] = S("Idioma", "Language", "Idioma"),
 
@@ -42,9 +43,9 @@ internal static class Strings
         ["Main.FileGone"] = S("{0} (arquivo não existe mais)", "{0} (file no longer exists)", "{0} (el archivo ya no existe)"),
 
         // ---- Controls and status ----
-        ["Main.Start"] = S("▶ Start", "▶ Start", "▶ Iniciar"),
-        ["Main.Stop"] = S("■ Stop", "■ Stop", "■ Detener"),
-        ["Main.Restart"] = S("⟳ Restart", "⟳ Restart", "⟳ Reiniciar"),
+        ["Main.Start"] = S("Start", "Start", "Iniciar"),
+        ["Main.Stop"] = S("Stop", "Stop", "Detener"),
+        ["Main.Restart"] = S("Restart", "Restart", "Reiniciar"),
         ["Main.Start.Tip"] = S("Inicia o authserver e o worldserver", "Starts authserver and worldserver",
             "Inicia el authserver y el worldserver"),
         ["Main.Stop.Tip"] = S(
@@ -70,6 +71,7 @@ internal static class Strings
         ["State.Stopping"] = S("Parando...", "Stopping...", "Deteniendo..."),
         ["State.Stopped"] = S("Parado", "Stopped", "Detenido"),
         ["State.Unknown"] = S("Estado desconhecido", "Unknown state", "Estado desconocido"),
+        ["State.NotFound"] = S("Não encontrado", "Not found", "No encontrado"),
         ["State.Online"] = S("Online", "Online", "En línea"),
         ["State.CrashedRestarting"] = S("Caiu, reiniciando...", "Crashed, restarting...", "Caído, reiniciando..."),
         ["State.Since"] = S(" há {0}", " for {0}", " desde hace {0}"),
@@ -85,7 +87,6 @@ internal static class Strings
         ["MySql.Stop.Tip"] = S("Desliga o MySQL com segurança", "Shuts MySQL down safely", "Apaga MySQL de forma segura"),
         ["MySql.StopFirst.Tip"] = S("Pare os servidores antes de parar o MySQL", "Stop the servers before stopping MySQL",
             "Detén los servidores antes de detener MySQL"),
-        ["MySql.NotFound"] = S("MySQL: não encontrado", "MySQL: not found", "MySQL: no encontrado"),
         ["MySql.NotFound.Tip"] = S(
             "O painel não achou um MySQL para controlar: nem um mysqld.exe na pasta do servidor, nem um serviço do Windows de MySQL ou MariaDB.",
             "The panel found no MySQL to control: no mysqld.exe in the server folder and no MySQL or MariaDB Windows service.",
@@ -281,7 +282,8 @@ internal static class Strings
             "El worldserver no está en ejecución."),
         ["Players.Kick"] = S("Expulsar do jogo (kick, via SOAP)", "Kick from the game (via SOAP)", "Expulsar del juego (kick, vía SOAP)"),
         ["Players.Online"] = S("Jogadores online: {0}", "Players online: {0}", "Jugadores en línea: {0}"),
-        ["Players.StatusError"] = S("Jogadores online: erro", "Players online: error", "Jugadores en línea: error"),
+        ["Players.Factions"] = S("Aliança {0} · Horda {1}", "Alliance {0} · Horde {1}", "Alianza {0} · Horda {1}"),
+        ["Tile.Players"] = S("Jogadores online", "Players online", "Jugadores en línea"),
         ["Players.QueryError"] = S(
             "Não foi possível consultar o banco characters: {0}",
             "Could not query the characters database: {0}",
@@ -556,9 +558,7 @@ internal static class Strings
             "When minimized, the panel leaves the taskbar and stays in the icon near the clock.",
             "Al minimizar, el panel sale de la barra de tareas y queda en el icono junto al reloj."),
         ["Footer.ClearLogs"] = S("Limpar logs", "Clear logs", "Limpiar logs"),
-        ["Footer.Theme"] = S("Tema:", "Theme:", "Tema:"),
-        ["Theme.System"] = S("Seguir o Windows", "Follow Windows", "Seguir Windows"),
-        ["Theme.Light"] = S("Claro", "Light", "Claro"),
-        ["Theme.Dark"] = S("Escuro", "Dark", "Oscuro"),
+        ["Theme.Light"] = S("Tema claro", "Light theme", "Tema claro"),
+        ["Theme.Dark"] = S("Tema escuro", "Dark theme", "Tema oscuro"),
     };
 }

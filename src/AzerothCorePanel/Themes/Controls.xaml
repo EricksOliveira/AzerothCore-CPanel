@@ -221,19 +221,19 @@
     </Setter>
   </Style>
 
-  <!-- TabControl and TabItem -->
+  <!-- TabControl and TabItem: underline tabs above a card -->
   <Style TargetType="TabControl">
     <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
-    <Setter Property="Padding" Value="6" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="Padding" Value="10" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="TabControl">
           <DockPanel KeyboardNavigation.TabNavigation="Local">
-            <TabPanel DockPanel.Dock="Top" IsItemsHost="True" Panel.ZIndex="1" Margin="0,0,0,-1" />
+            <TabPanel DockPanel.Dock="Top" IsItemsHost="True" Margin="4,0,0,6" />
             <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="1" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                    BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
               <ContentPresenter ContentSource="SelectedContent" />
             </Border>
           </DockPanel>
@@ -243,25 +243,32 @@
   </Style>
 
   <Style TargetType="TabItem">
-    <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
-    <Setter Property="Padding" Value="12,5" />
+    <Setter Property="Padding" Value="12,6,12,4" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="TabItem">
-          <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1,1,1,0"
-                  CornerRadius="4,4,0,0" Padding="{TemplateBinding Padding}" Margin="0,0,2,0" SnapsToDevicePixels="True">
-            <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
-          </Border>
+          <Grid Background="Transparent" Margin="0,0,4,0">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="*" />
+              <RowDefinition Height="2" />
+            </Grid.RowDefinitions>
+            <Border x:Name="Bd" CornerRadius="4" Background="Transparent" Padding="{TemplateBinding Padding}">
+              <!-- Color and weight are set on the header only: the tab content inherits from the TabItem. -->
+              <ContentPresenter x:Name="Header" ContentSource="Header" RecognizesAccessKey="True"
+                                HorizontalAlignment="Center" TextElement.Foreground="{DynamicResource SubtleTextBrush}" />
+            </Border>
+            <Border x:Name="Underline" Grid.Row="1" CornerRadius="1" Margin="8,0" Background="Transparent" />
+          </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlBackgroundBrush}" />
+              <Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource TextBrush}" />
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
-              <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
-              <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-              <Setter Property="Panel.ZIndex" Value="2" />
+              <Setter TargetName="Underline" Property="Background" Value="{DynamicResource AccentBrush}" />
+              <Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource TextBrush}" />
+              <Setter TargetName="Header" Property="TextElement.FontWeight" Value="SemiBold" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -269,18 +276,19 @@
     </Setter>
   </Style>
 
-  <!-- GroupBox -->
+  <!-- GroupBox: a card with a bold header -->
   <Style TargetType="GroupBox">
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}" />
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="GroupBox">
-          <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="4"
+          <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8"
                   Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
             <DockPanel>
-              <ContentPresenter DockPanel.Dock="Top" ContentSource="Header" Margin="8,5,8,0"
-                                TextElement.Foreground="{DynamicResource SubtleTextBrush}" />
+              <ContentPresenter DockPanel.Dock="Top" ContentSource="Header" Margin="12,8,12,0"
+                                TextElement.FontWeight="SemiBold" />
               <ContentPresenter Margin="{TemplateBinding Padding}" />
             </DockPanel>
           </Border>
@@ -288,6 +296,100 @@
       </Setter.Value>
     </Setter>
   </Style>
+
+  <!-- Card: rounded panel for the status tiles and the server box -->
+  <Style x:Key="Card" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+  </Style>
+
+  <!-- Filled buttons: green to start, red to stop -->
+  <Style x:Key="FilledButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4"
+                  Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bd" Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="Bd" Property="Opacity" Value="0.4" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource FilledButton}">
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}" />
+    <Setter Property="Tag" Value="{DynamicResource SuccessHoverBrush}" />
+  </Style>
+
+  <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource FilledButton}">
+    <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+    <Setter Property="Tag" Value="{DynamicResource DangerHoverBrush}" />
+  </Style>
+
+  <!-- Flat icon button (header: language picker) -->
+  <Style x:Key="FlatButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+
+  <!-- Segmented choice (header: light / dark theme) -->
+  <Style x:Key="SegmentRadio" TargetType="RadioButton">
+    <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
+    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="8,5" Margin="2">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+              <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- Vector icons (16 x 16), drawn with the text color of the control that shows them -->
+  <Geometry x:Key="Icon.Play">M4.5,2.5 L13.5,8 L4.5,13.5 Z</Geometry>
+  <Geometry x:Key="Icon.Stop">M3.5,3.5 H12.5 V12.5 H3.5 Z</Geometry>
+  <Geometry x:Key="Icon.Restart">M8,2.25 A5.75,5.75 0 1 1 2.6,6 L4.1,6.5 A4.25,4.25 0 1 0 8,3.75 Z M8,0.5 L11.5,3 L8,5.5 Z</Geometry>
+  <Geometry x:Key="Icon.Sun">M8,4.5 A3.5,3.5 0 1 1 7.99,4.5 Z M7.25,0.5 H8.75 V3 H7.25 Z M7.25,13 H8.75 V15.5 H7.25 Z M0.5,7.25 H3 V8.75 H0.5 Z M13,7.25 H15.5 V8.75 H13 Z M2.2,3.26 L3.26,2.2 L5.03,3.97 L3.97,5.03 Z M10.97,12.03 L12.03,10.97 L13.8,12.74 L12.74,13.8 Z M2.2,12.74 L3.97,10.97 L5.03,12.03 L3.26,13.8 Z M10.97,3.97 L12.74,2.2 L13.8,3.26 L12.03,5.03 Z</Geometry>
+  <Geometry x:Key="Icon.Moon">M10.5,1.2 A6.8,6.8 0 1 0 14.8,10.6 A5.4,5.4 0 1 1 10.5,1.2 Z</Geometry>
+
+  <!-- AzerothCore CPanel logo, same shapes as assets/logo.svg -->
+  <DrawingImage x:Key="Logo">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <GeometryDrawing Brush="#E3242B" Geometry="M428,0 L868,460 L776,557 L430,195 L93,565 L0,468 Z" />
+        <GeometryDrawing Brush="#8A8283" Geometry="M433,287 L569,429 L436,573 L300,432 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
 
   <!-- DataGrid -->
   <Style TargetType="DataGrid">

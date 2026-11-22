@@ -20,6 +20,12 @@
   <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#787878" />
   <SolidColorBrush x:Key="LogBackgroundBrush" Color="#161616" />
   <SolidColorBrush x:Key="LogTextBrush" Color="#DCDCDC" />
+  <SolidColorBrush x:Key="CardBorderBrush" Color="#363636" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="#2E9E4F" />
+  <SolidColorBrush x:Key="SuccessHoverBrush" Color="#36B35B" />
+  <SolidColorBrush x:Key="DangerBrush" Color="#D9483F" />
+  <SolidColorBrush x:Key="DangerHoverBrush" Color="#E5625A" />
+  <SolidColorBrush x:Key="SegmentBackgroundBrush" Color="#333333" />
 
   <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#1F1F1F" />
   <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#2A2A2A" />

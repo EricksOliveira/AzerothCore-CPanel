@@ -65,9 +65,10 @@ public partial class MainWindow : Window
         StartServersOnAutostartCheck.IsChecked = _settings.StartServersOnAutostart;
         StartMySqlWithServersCheck.IsChecked = _settings.StartMySqlWithServers;
         ToolTipService.SetShowOnDisabled(MySqlStopButton, true);
-        ThemeCombo.SelectedItem = ThemeCombo.Items.OfType<ComboBoxItem>()
-            .FirstOrDefault(item => (string)item.Tag == ThemeManager.Selected.ToString()) ?? ThemeCombo.Items[0];
+        UpdateThemeButtons();
         ThemeManager.Changed += OnThemeChanged;
+        Version? version = typeof(MainWindow).Assembly.GetName().Version;
+        VersionText.Text = version is null ? string.Empty : $"v{version.Major}.{version.Minor}.{version.Build}";
         SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
         _tray.SetDark(ThemeManager.IsDark);
         UpdateLanguageButton();
@@ -557,17 +558,34 @@ public partial class MainWindow : Window
         LoadStartWithWindows();
     }
 
-    private void ThemeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private bool _updatingThemeButtons;
+
+    /// <summary>Sun (light) or moon (dark) clicked in the header.</summary>
+    private void ThemeButton_Checked(object sender, RoutedEventArgs e)
     {
-        if (_settings is null || ThemeCombo.SelectedItem is not ComboBoxItem { Tag: string tag }
-            || !Enum.TryParse(tag, out AppTheme theme) || theme == ThemeManager.Selected)
+        if (_settings is null || _updatingThemeButtons)
+        {
+            return;
+        }
+
+        AppTheme theme = sender == ThemeDarkButton ? AppTheme.Dark : AppTheme.Light;
+        if (theme == ThemeManager.Selected)
         {
             return;
         }
 
         ThemeManager.Apply(theme);
-        _settings.Theme = tag;
+        _settings.Theme = theme.ToString();
         SaveSettings();
+    }
+
+    /// <summary>Highlights the sun or the moon for the theme in use (also while following Windows).</summary>
+    private void UpdateThemeButtons()
+    {
+        _updatingThemeButtons = true;
+        ThemeDarkButton.IsChecked = ThemeManager.IsDark;
+        ThemeLightButton.IsChecked = !ThemeManager.IsDark;
+        _updatingThemeButtons = false;
     }
 
     private void LanguageButton_Click(object sender, RoutedEventArgs e)
@@ -594,7 +612,7 @@ public partial class MainWindow : Window
         SaveSettings();
     }
 
-    /// <summary>Flag and code of the current language on the footer button; the current one is bold in the menu.</summary>
+    /// <summary>Flag and code of the current language on the header button; the current one is bold in the menu.</summary>
     private void UpdateLanguageButton()
     {
         string code = L.Code(L.Current);
@@ -614,7 +632,7 @@ public partial class MainWindow : Window
 
         // A ComboBox keeps showing the old text of its selected item until the selection changes.
         _loadingBackupOptions = true;
-        foreach (ComboBox combo in new[] { ThemeCombo, BackupIntervalCombo, BackupKeepCombo })
+        foreach (ComboBox combo in new[] { BackupIntervalCombo, BackupKeepCombo })
         {
             object? selected = combo.SelectedItem;
             combo.SelectedItem = null;
@@ -636,6 +654,7 @@ public partial class MainWindow : Window
     private void OnThemeChanged()
     {
         _tray.SetDark(ThemeManager.IsDark);
+        UpdateThemeButtons();
 
         // Texts colored from code pick up the new colors.
         UpdateMetrics();
@@ -871,40 +890,57 @@ public partial class MainWindow : Window
         ShowMySqlState();
     }
 
-    private static (Brush Color, string Label) MySqlLabel(MySqlState state) => state switch
+    private (Brush Color, string Label) MySqlLabel(MySqlState state) => state switch
     {
-        MySqlState.Running => (Brushes.LimeGreen, L.T("State.Running")),
-        MySqlState.Starting => (Brushes.Orange, L.T("State.Starting")),
-        MySqlState.Stopping => (Brushes.Orange, L.T("State.Stopping")),
-        MySqlState.Stopped => (Brushes.Gray, L.T("State.Stopped")),
-        _ => (Brushes.Gray, L.T("State.Unknown")),
+        MySqlState.Running => (OnlineDot, L.T("State.Running")),
+        MySqlState.Starting => (ChangingDot, L.T("State.Starting")),
+        MySqlState.Stopping => (ChangingDot, L.T("State.Stopping")),
+        MySqlState.Stopped => (StoppedDot, L.T("State.Stopped")),
+        _ => (StoppedDot, L.T("State.Unknown")),
     };
 
     private void ShowMySqlState()
     {
         if (_mySql is null)
         {
-            MySqlDot.Fill = Brushes.Gray;
-            MySqlStatusText.Text = L.T("MySql.NotFound");
+            MySqlDot.Fill = StoppedDot;
+            MySqlStatusText.Text = L.T("State.NotFound");
             MySqlStatusText.ToolTip = L.T("MySql.NotFound.Tip");
+            MySqlDetailText.Text = string.Empty;
             MySqlStartButton.Visibility = MySqlStopButton.Visibility = Visibility.Collapsed;
             return;
         }
 
         (Brush color, string label) = MySqlLabel(_mySqlState);
         MySqlDot.Fill = color;
-        MySqlStatusText.Text = $"MySQL: {label} ({_mySql.Description})";
-        MySqlStatusText.ToolTip = _mySql.Description;
+        MySqlStatusText.Text = label;
+        MySqlStatusText.ToolTip = null;
+        MySqlDetailText.Text = _mySql.Description;
+        MySqlDetailText.ToolTip = _mySql.Description;
         MySqlStartButton.Visibility = MySqlStopButton.Visibility = Visibility.Visible;
     }
 
+    // Status dot colors: theme green when online, amber while changing, theme red after a crash, gray when stopped.
+    private static readonly Brush ChangingDot = Freeze(new SolidColorBrush(Color.FromRgb(0xE8, 0xA3, 0x17)));
+    private static readonly Brush StoppedDot = Freeze(new SolidColorBrush(Color.FromRgb(0x9A, 0x9A, 0x9A)));
+
+    private static Brush Freeze(SolidColorBrush brush)
+    {
+        brush.Freeze();
+        return brush;
+    }
+
+    private Brush OnlineDot => (Brush)FindResource("SuccessBrush");
+
+    private Brush CrashedDot => (Brush)FindResource("DangerBrush");
+
     private (Brush Color, string Label) StateLabel(ServerProcess server) => server.State switch
     {
-        ServerState.Starting => (Brushes.Orange, L.T("State.Starting")),
-        ServerState.Running => (Brushes.LimeGreen, L.T("State.Online")),
-        ServerState.Stopping => (Brushes.Orange, L.T("State.Stopping")),
-        _ when _manager.IsRestartPending(server) => (Brushes.OrangeRed, L.T("State.CrashedRestarting")),
-        _ => (Brushes.Gray, L.T("State.Stopped")),
+        ServerState.Starting => (ChangingDot, L.T("State.Starting")),
+        ServerState.Running => (OnlineDot, L.T("State.Online")),
+        ServerState.Stopping => (ChangingDot, L.T("State.Stopping")),
+        _ when _manager.IsRestartPending(server) => (CrashedDot, L.T("State.CrashedRestarting")),
+        _ => (StoppedDot, L.T("State.Stopped")),
     };
 
     private void ShowState(ServerProcess server, Ellipse dot, TextBlock text)
@@ -918,7 +954,7 @@ public partial class MainWindow : Window
         }
 
         dot.Fill = color;
-        text.Text = $"{server.Name}: {label}";
+        text.Text = label;
     }
 
     private void UpdateSoapStatus()
@@ -1466,8 +1502,9 @@ public partial class MainWindow : Window
 
         if (error is not null)
         {
-            PlayersStatusText.Text = L.T("Players.StatusError");
-            PlayersStatusText.ToolTip = error;
+            PlayersCountText.Text = "—";
+            PlayersFactionText.Text = L.T("Common.Error");
+            PlayersFactionText.ToolTip = error;
             PlayersInfoText.Text = L.F("Players.QueryError", error);
 
             // Log each different error once, not every 15 seconds.
@@ -1484,16 +1521,18 @@ public partial class MainWindow : Window
 
         if (players is null)
         {
-            PlayersStatusText.Text = L.F("Players.Online", "—");
-            PlayersStatusText.ToolTip = null;
+            PlayersCountText.Text = "—";
+            PlayersFactionText.Text = string.Empty;
+            PlayersFactionText.ToolTip = null;
             PlayersInfoText.Text = L.T("Players.NotRunning");
             return;
         }
 
         int alliance = players.Count(p => p.IsAlliance);
         string updated = L.F("Players.Updated", DateTime.Now.ToString("T", L.Culture));
-        PlayersStatusText.Text = L.F("Players.Online", players.Count);
-        PlayersStatusText.ToolTip = L.F("Players.FactionTip", alliance, players.Count - alliance, updated);
+        PlayersCountText.Text = players.Count.ToString(L.Culture);
+        PlayersFactionText.Text = L.F("Players.Factions", alliance, players.Count - alliance);
+        PlayersFactionText.ToolTip = L.F("Players.FactionTip", alliance, players.Count - alliance, updated);
         PlayersInfoText.Text = players.Count == 0
             ? L.F("Players.NoneOnline", updated)
             : L.F("Players.CountInfo", players.Count, alliance, players.Count - alliance, updated);

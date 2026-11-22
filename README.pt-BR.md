@@ -16,7 +16,7 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 É um arquivo único e não precisa instalar o .NET.
 
 1. Abra o `AzerothCorePanel.exe`
-2. O painel abre em inglês: clique na bandeira no rodapé e escolha **PT — Português**
+2. O painel abre em inglês: clique na bandeira no canto superior direito e escolha **PT — Português**
 3. Clique em **Procurar...** e escolha a pasta da Build ou do Repack
 4. Clique em **Start**
 
@@ -43,8 +43,8 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] Backup do banco de dados: manual ou agendado (1h, 6h, 12h, diário), em .zip, mantendo os últimos N
 - [x] Editor do `worldserver.conf` e do `authserver.conf`: tabela com busca, descrição de cada opção e padrão do
   `.dist`
-- [x] Tema escuro: Claro, Escuro ou Seguir o Windows, trocando na hora
-- [x] Três idiomas: inglês (padrão), português e espanhol, escolhidos num botão com bandeiras
+- [x] Temas claro e escuro: botões de sol e lua no canto superior direito, trocando na hora
+- [x] Três idiomas: inglês (padrão), português e espanhol, escolhidos no botão com a bandeira no canto superior direito
 
 Ideias e sugestões são bem-vindas: abra uma [issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
 
@@ -106,10 +106,9 @@ Ideias e sugestões são bem-vindas: abra uma [issue](https://github.com/EricksO
   arquivo (comum depois de atualizar o core) aparecem em cinza e são adicionadas no fim ao mudar o valor. Salvar
   troca só as linhas alteradas, mantendo comentários e espaçamento, e guarda a versão anterior em `.conf.bak`. Se o
   `.conf` não existir, **Criar a partir do .dist** copia o padrão.
-- **Tema**: no rodapé, **Tema** escolhe Claro, Escuro ou Seguir o Windows (padrão). A troca é na hora, sem
-  reiniciar, e inclui a barra de título e o menu da bandeja. No modo Seguir o Windows, o painel acompanha a
-  configuração "Escolha o modo de aplicativo" do Windows enquanto está aberto.
-- **Idioma**: o botão com a bandeira no rodapé abre um menu com inglês (padrão), português e espanhol. O painel
+- **Tema**: os botões de sol (claro) e lua (escuro) no canto superior direito trocam o tema na hora, sem reiniciar,
+  incluindo a barra de título e o menu da bandeja. Até você escolher um, o painel segue o modo de aplicativo do Windows.
+- **Idioma**: o botão com a bandeira no canto superior direito abre um menu com inglês (padrão), português e espanhol. O painel
   inteiro troca na hora, incluindo notificações, o menu da bandeja e o formato de números e datas.
 - Só um painel roda por vez: abrir de novo traz a janela que já está aberta (ou na bandeja).
 - As configurações ficam em `%APPDATA%\AzerothCorePanel\settings.json`.

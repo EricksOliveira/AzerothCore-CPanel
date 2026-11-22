@@ -16,7 +16,7 @@ Descarga `AzerothCorePanel.exe` desde la [página de releases](https://github.co
 Es un único archivo y no necesita instalar .NET.
 
 1. Abre `AzerothCorePanel.exe`
-2. El panel se abre en inglés: haz clic en la bandera del pie de la ventana y elige **ES — Español**
+2. El panel se abre en inglés: haz clic en la bandera de la esquina superior derecha y elige **ES — Español**
 3. Haz clic en **Examinar...** y elige la carpeta de la Build o del Repack
 4. Haz clic en **Iniciar**
 
@@ -45,8 +45,8 @@ Es un único archivo y no necesita instalar .NET.
   últimas N
 - [x] Editor de `worldserver.conf` y `authserver.conf`: tabla con búsqueda, la descripción de cada opción y el valor
   por defecto del `.dist`
-- [x] Tema oscuro: Claro, Oscuro o Seguir Windows, con cambio inmediato
-- [x] Tres idiomas: inglés (por defecto), portugués y español, elegidos con un botón de banderas
+- [x] Temas claro y oscuro: botones de sol y luna en la esquina superior derecha, con cambio inmediato
+- [x] Tres idiomas: inglés (por defecto), portugués y español, elegidos con el botón de la bandera en la esquina superior derecha
 
 Las ideas y sugerencias son bienvenidas: abre un [issue](https://github.com/EricksOliveira/AzerothCore-CPanel/issues).
 
@@ -112,10 +112,10 @@ Las ideas y sugerencias son bienvenidas: abre un [issue](https://github.com/Eric
   agregan al final al cambiar su valor. Guardar reemplaza solo las líneas editadas, conservando comentarios y
   espaciado, y guarda la versión anterior como `.conf.bak`. Si el `.conf` no existe, **Crear a partir del .dist**
   copia el valor por defecto.
-- **Tema**: **Tema** en el pie de la ventana elige Claro, Oscuro o Seguir Windows (por defecto). Cambia al instante,
-  sin reiniciar, incluida la barra de título y el menú de la bandeja. En modo Seguir Windows, el panel sigue el modo
-  de aplicación de Windows mientras está abierto.
-- **Idioma**: el botón con la bandera en el pie de la ventana abre un menú con inglés (por defecto), portugués y
+- **Tema**: los botones de sol (claro) y luna (oscuro) en la esquina superior derecha cambian el tema al instante, sin
+  reiniciar, incluida la barra de título y el menú de la bandeja. Hasta que elijas uno, el panel sigue el modo de
+  aplicación de Windows.
+- **Idioma**: el botón con la bandera en la esquina superior derecha abre un menú con inglés (por defecto), portugués y
   español. Todo el panel cambia al instante, incluidas las notificaciones, el menú de la bandeja y el formato de
   números y fechas.
 - Solo se ejecuta un panel a la vez: abrirlo de nuevo muestra el que ya está abierto (o en la bandeja).

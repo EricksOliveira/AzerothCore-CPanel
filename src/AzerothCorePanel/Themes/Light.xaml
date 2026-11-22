@@ -20,6 +20,12 @@
   <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#A6A6A6" />
   <SolidColorBrush x:Key="LogBackgroundBrush" Color="#1E1E1E" />
   <SolidColorBrush x:Key="LogTextBrush" Color="#DCDCDC" />
+  <SolidColorBrush x:Key="CardBorderBrush" Color="#E1E1E1" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="#1E8E3E" />
+  <SolidColorBrush x:Key="SuccessHoverBrush" Color="#18773A" />
+  <SolidColorBrush x:Key="DangerBrush" Color="#D93025" />
+  <SolidColorBrush x:Key="DangerHoverBrush" Color="#B8261D" />
+  <SolidColorBrush x:Key="SegmentBackgroundBrush" Color="#E6E6E6" />
 
   <!-- System colors still used by a few built-in parts (ScrollViewer corner, DataGrid focus, ...). -->
   <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#F3F3F3" />
