@@ -8,7 +8,7 @@ Painel de controle para Windows feito para servidores [AzerothCore](https://www.
 (World of Warcraft 3.3.5a). Em vez de abrir o `authserver.exe` e o `worldserver.exe` na mão,
 o painel cuida disso com um clique.
 
-> **Status:** versão 1.4 disponível.
+> **Status:** versão 1.4.1 disponível.
 
 ![Janela principal do AzerothCore CPanel, tema claro](assets/screenshots/panel-light.png)
 
