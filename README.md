@@ -32,6 +32,8 @@ It is a single file and does not need .NET to be installed.
 - [x] **Restart**: stops and starts both servers
 - [x] Start or stop only one server with the **Start** and **Stop** buttons on its row in the status area
 - [x] Live logs for each server, in tabs, and a box to send worldserver console commands
+- [x] Colored logs by level (INFO blue, WARN yellow, ERROR red), with filters, search, copy and save, and the
+  number of errors on each log tab
 - [x] Restarts worldserver by itself when it asks for a restart (`server restart`, exit code 2)
 - [x] If the panel closes or crashes, the servers are not left running hidden (Job Object)
 - [x] Automatic restart after a crash, with a limit so it does not loop
@@ -68,6 +70,13 @@ Ideas and suggestions are welcome: open an [issue](https://github.com/EricksOliv
 - **Restart a server that crashes** (on by default): if a server closes without being asked to, the panel starts
   it again after 5 seconds. After 3 crashes in 5 minutes it gives up, since the problem is probably the
   configuration or the database. A `server shutdown` given in game or in the console does not count as a crash.
+- **Logs**: each line shows its time, its level and the message. The level comes from AzerothCore itself: the panel
+  starts the servers with the environment variable `AC_APPENDER_CONSOLE` (authserver: the variable of its log file
+  appender), which is your own appender line plus the "log level" flag, so your `.conf` files are not changed. Old
+  builds that do not read options from environment variables still work: errors are then the lines written to the
+  error output, and warnings are guessed from the text. The **All**, **Info**, **Warnings** and **Errors** buttons
+  show one level at a time, the search box keeps only the lines with that text, and **Save log...** writes the lines
+  shown to a file. Select lines and press Ctrl+C (or right-click) to copy them.
 - **System tray**: the icon stays next to the clock while the panel is open. Click it to open the panel; right-click
   shows Start, Stop, Restart and Exit. With **Minimize to tray** on (the default), minimizing removes the panel from
   the taskbar. A notification appears when a server crashes. On Windows 11 the icon starts in the hidden icons area

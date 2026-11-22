@@ -21,8 +21,8 @@ public partial class MainWindow : Window
     private readonly PanelSettings _settings;
     private readonly ServerManager _manager = new();
     private readonly TrayIcon _tray = new();
-    private readonly LogPane _authLog;
-    private readonly LogPane _worldLog;
+    private readonly LogView _authLog;
+    private readonly LogView _worldLog;
     private readonly DispatcherTimer _uiTimer;
     private readonly DispatcherTimer _metricsTimer;
     private readonly DispatcherTimer _playersTimer;
@@ -49,8 +49,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _authLog = new LogPane(AuthLogBox);
-        _worldLog = new LogPane(WorldLogBox);
+        _authLog = AuthLogView;
+        _worldLog = WorldLogView;
 
         _settings = PanelSettings.Load();
         _manager.ShutdownTimeout = TimeSpan.FromSeconds(Math.Max(5, _settings.ShutdownTimeoutSeconds));
@@ -727,7 +727,7 @@ public partial class MainWindow : Window
 
         Activate();
 
-        // Wait for layout, so the TextBoxes know their size before scrolling.
+        // Wait for layout, so the logs know their size before scrolling.
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
             _worldLog.ScrollToEndIfAuto();

@@ -37,6 +37,8 @@ Es un único archivo y no necesita instalar .NET.
 - [x] **Reiniciar**: detiene e inicia los dos servidores
 - [x] Iniciar o detener solo un servidor con los botones **Iniciar** y **Detener** de su fila, en el área de estado
 - [x] Logs en vivo de cada servidor, en pestañas, y un campo para enviar comandos a la consola del worldserver
+- [x] Logs con colores por nivel (INFO azul, WARN amarillo, ERROR rojo), con filtros, búsqueda, copiar y guardar,
+  y el número de errores en cada pestaña de log
 - [x] Reinicia el worldserver solo cuando él lo pide (`server restart`, código de salida 2)
 - [x] Si el panel se cierra o se cuelga, los servidores no quedan ejecutándose ocultos (Job Object)
 - [x] Reinicio automático tras una caída, con un límite para no quedar en bucle
@@ -78,6 +80,13 @@ Las ideas y sugerencias son bienvenidas: abre un [issue](https://github.com/Eric
   panel lo inicia de nuevo a los 5 segundos. Tras 3 caídas en 5 minutos desiste, porque el problema probablemente
   es de configuración o de la base de datos. Un `server shutdown` dado en el juego o en la consola no cuenta como
   caída.
+- **Logs**: cada línea muestra la hora, el nivel y el mensaje. El nivel viene del propio AzerothCore: el panel inicia
+  los servidores con la variable de entorno `AC_APPENDER_CONSOLE` (authserver: la variable del appender de su archivo
+  de log), que es su propia línea del appender más la flag de "nivel del log", así que tus `.conf` no se modifican.
+  Las builds antiguas que no leen opciones de variables de entorno siguen funcionando: los errores son entonces las
+  líneas de la salida de error, y las advertencias se deducen del texto. Los botones **Todos**, **Info**, **Avisos** y
+  **Errores** muestran un nivel a la vez, la búsqueda deja solo las líneas con ese texto, y **Guardar log...** guarda
+  en un archivo las líneas mostradas. Selecciona líneas y pulsa Ctrl+C (o use el botón derecho) para copiarlas.
 - **Bandeja del sistema**: el icono queda junto al reloj mientras el panel está abierto. Haz clic para abrir el
   panel; el clic derecho muestra Iniciar, Detener, Reiniciar y Salir. Con **Minimizar a la bandeja** activado (por
   defecto), al minimizar el panel sale de la barra de tareas. Aparece una notificación cuando un servidor se cae. En

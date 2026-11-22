@@ -1,0 +1,163 @@
+<UserControl x:Class="AzerothCorePanel.Views.LogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:AzerothCorePanel.Localization"
+             xmlns:services="clr-namespace:AzerothCorePanel.Services">
+  <UserControl.Resources>
+    <!-- The log is dark in both themes, so the level colors are the same in both. -->
+    <SolidColorBrush x:Key="LogInfoBrush" Color="#4FA3F7" />
+    <SolidColorBrush x:Key="LogWarningBrush" Color="#E8B341" />
+    <SolidColorBrush x:Key="LogErrorBrush" Color="#F2645A" />
+    <SolidColorBrush x:Key="LogErrorTextBrush" Color="#FF9A92" />
+    <SolidColorBrush x:Key="LogDebugBrush" Color="#8C8C8C" />
+    <SolidColorBrush x:Key="LogTimeBrush" Color="#7A7A7A" />
+
+    <Style x:Key="FilterDot" TargetType="Ellipse">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="Height" Value="8" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="FilterCount" TargetType="TextBlock">
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="LogItem" TargetType="ListBoxItem">
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListBoxItem">
+            <Border x:Name="Bd" Background="Transparent" Padding="6,1">
+              <ContentPresenter />
+            </Border>
+            <ControlTemplate.Triggers>
+              <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Warning}">
+                <Setter TargetName="Bd" Property="Background" Value="#1FE8B341" />
+              </DataTrigger>
+              <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Error}">
+                <Setter TargetName="Bd" Property="Background" Value="#26F2645A" />
+              </DataTrigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#2C2F33" />
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#264F78" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <DataTemplate x:Key="LogLine" DataType="{x:Type services:LogEntry}">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{Binding TimeText}" Foreground="{StaticResource LogTimeBrush}" Margin="0,0,10,0" />
+        <TextBlock x:Name="Level" Text="{Binding LevelText}" Width="44" FontWeight="Bold"
+                   Foreground="{StaticResource LogInfoBrush}" />
+        <TextBlock x:Name="Message" Text="{Binding Text}" Foreground="{DynamicResource LogTextBrush}" />
+      </StackPanel>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Debug}">
+          <Setter TargetName="Level" Property="Foreground" Value="{StaticResource LogDebugBrush}" />
+          <Setter TargetName="Message" Property="Foreground" Value="{StaticResource LogDebugBrush}" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Warning}">
+          <Setter TargetName="Level" Property="Foreground" Value="{StaticResource LogWarningBrush}" />
+          <Setter TargetName="Message" Property="Foreground" Value="{StaticResource LogWarningBrush}" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Error}">
+          <Setter TargetName="Level" Property="Foreground" Value="{StaticResource LogErrorBrush}" />
+          <Setter TargetName="Message" Property="Foreground" Value="{StaticResource LogErrorTextBrush}" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <DockPanel>
+    <!-- Level filters, search and save -->
+    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+      <Border DockPanel.Dock="Left" Background="{DynamicResource SegmentBackgroundBrush}" CornerRadius="6">
+        <StackPanel Orientation="Horizontal">
+          <RadioButton x:Name="AllFilter" Style="{StaticResource SegmentRadio}" IsChecked="True"
+                       Checked="Filter_Checked" ToolTip="{l:Tr Logs.All.Tip}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="{l:Tr Logs.All}" />
+              <TextBlock x:Name="AllCount" Style="{StaticResource FilterCount}" Text="0" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="InfoFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+                       ToolTip="{l:Tr Logs.Info.Tip}">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogInfoBrush}" />
+              <TextBlock Text="{l:Tr Logs.Info}" />
+              <TextBlock x:Name="InfoCount" Style="{StaticResource FilterCount}" Text="0" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="WarningFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+                       ToolTip="{l:Tr Logs.Warnings.Tip}">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogWarningBrush}" />
+              <TextBlock Text="{l:Tr Logs.Warnings}" />
+              <TextBlock x:Name="WarningCount" Style="{StaticResource FilterCount}" Text="0" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="ErrorFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+                       ToolTip="{l:Tr Logs.Errors.Tip}">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogErrorBrush}" />
+              <TextBlock Text="{l:Tr Logs.Errors}" />
+              <TextBlock x:Name="ErrorCountText" Style="{StaticResource FilterCount}" Text="0" />
+            </StackPanel>
+          </RadioButton>
+        </StackPanel>
+      </Border>
+
+      <Button DockPanel.Dock="Right" Margin="8,0,0,0" Padding="12,4" Content="{l:Tr Logs.Save}"
+              ToolTip="{l:Tr Logs.Save.Tip}" Click="SaveButton_Click" />
+      <Grid DockPanel.Dock="Right" Width="240">
+        <TextBox x:Name="SearchBox" Padding="4,3" VerticalContentAlignment="Center"
+                 TextChanged="SearchBox_TextChanged" ToolTip="{l:Tr Logs.Search.Tip}" />
+        <TextBlock x:Name="SearchPlaceholder" Text="{l:Tr Logs.Search}" Margin="9,0,0,0" VerticalAlignment="Center"
+                   Foreground="{DynamicResource SubtleTextBrush}" IsHitTestVisible="False" />
+      </Grid>
+      <TextBlock />
+    </DockPanel>
+
+    <ListBox x:Name="LinesList"
+             ItemContainerStyle="{StaticResource LogItem}"
+             ItemTemplate="{StaticResource LogLine}"
+             SelectionMode="Extended"
+             FontFamily="Consolas" FontSize="12"
+             Background="{DynamicResource LogBackgroundBrush}"
+             BorderThickness="0"
+             VirtualizingPanel.IsVirtualizing="True"
+             VirtualizingPanel.VirtualizationMode="Recycling"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             KeyDown="LinesList_KeyDown">
+      <ListBox.Resources>
+        <!-- Corner between the two scroll bars: same dark color as the log, in both themes. -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#1A1A1A" />
+      </ListBox.Resources>
+      <ListBox.Template>
+        <ControlTemplate TargetType="ListBox">
+          <Border Background="{TemplateBinding Background}" Padding="0,4">
+            <ScrollViewer x:Name="Scroller" Focusable="False" CanContentScroll="True">
+              <ItemsPresenter />
+            </ScrollViewer>
+          </Border>
+        </ControlTemplate>
+      </ListBox.Template>
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="{l:Tr Logs.Copy}" InputGestureText="Ctrl+C" Click="CopyMenu_Click" />
+          <MenuItem Header="{l:Tr Logs.CopyAll}" Click="CopyAllMenu_Click" />
+          <Separator />
+          <MenuItem Header="{l:Tr Logs.Save}" Click="SaveButton_Click" />
+        </ContextMenu>
+      </ListBox.ContextMenu>
+    </ListBox>
+  </DockPanel>
+</UserControl>

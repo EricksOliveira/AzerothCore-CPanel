@@ -33,6 +33,7 @@ public sealed class ServerManager : IDisposable
             readyMarker: "(worldserver-daemon) ready...")
         {
             SendFlushHeartbeat = true,
+            ConsoleConf = "worldserver.conf",
         };
 
         Auth.Exited += OnServerExited;

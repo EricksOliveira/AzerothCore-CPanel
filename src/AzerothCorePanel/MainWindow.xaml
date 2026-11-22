@@ -35,6 +35,26 @@
       <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
     </Style>
 
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    <!-- Number of errors next to a log tab's name -->
+    <Style x:Key="ErrorBadge" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="MinWidth" Value="18" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Margin" Value="7,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="ToolTip" Value="{l:Tr Logs.ErrorBadge.Tip}" />
+      <Style.Resources>
+        <Style TargetType="TextBlock">
+          <Setter Property="Foreground" Value="White" />
+          <Setter Property="FontSize" Value="11" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+          <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+      </Style.Resources>
+    </Style>
+
     <Style x:Key="TileTitle" TargetType="TextBlock">
       <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -281,7 +301,16 @@
 
     <!-- Logs and tools -->
     <TabControl Grid.Row="3">
-      <TabItem Header="Worldserver">
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Worldserver" />
+            <Border Style="{StaticResource ErrorBadge}"
+                    Visibility="{Binding HasErrors, ElementName=WorldLogView, Converter={StaticResource BoolToVisibility}}">
+              <TextBlock Text="{Binding ErrorCount, ElementName=WorldLogView}" />
+            </Border>
+          </StackPanel>
+        </TabItem.Header>
         <DockPanel>
           <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
             <Button x:Name="SendCommandButton" DockPanel.Dock="Right" Margin="8,0,0,0"
@@ -289,7 +318,7 @@
             <TextBox x:Name="CommandBox" FontFamily="Consolas" VerticalContentAlignment="Center" Padding="4,3"
                      KeyDown="CommandBox_KeyDown" ToolTip="{l:Tr Console.Tip}" />
           </DockPanel>
-          <TextBox x:Name="WorldLogBox" Style="{StaticResource LogBoxStyle}" />
+          <views:LogView x:Name="WorldLogView" FileBaseName="worldserver" />
         </DockPanel>
       </TabItem>
       <TabItem x:Name="PlayersTab" Header="{l:Tr Tab.Players}">
@@ -434,8 +463,17 @@
           </DataGrid>
         </DockPanel>
       </TabItem>
-      <TabItem Header="Authserver">
-        <TextBox x:Name="AuthLogBox" Style="{StaticResource LogBoxStyle}" />
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Authserver" />
+            <Border Style="{StaticResource ErrorBadge}"
+                    Visibility="{Binding HasErrors, ElementName=AuthLogView, Converter={StaticResource BoolToVisibility}}">
+              <TextBlock Text="{Binding ErrorCount, ElementName=AuthLogView}" />
+            </Border>
+          </StackPanel>
+        </TabItem.Header>
+        <views:LogView x:Name="AuthLogView" FileBaseName="authserver" />
       </TabItem>
     </TabControl>
 

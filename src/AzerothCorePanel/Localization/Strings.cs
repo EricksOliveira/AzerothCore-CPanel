@@ -558,6 +558,38 @@ internal static class Strings
             "When minimized, the panel leaves the taskbar and stays in the icon near the clock.",
             "Al minimizar, el panel sale de la barra de tareas y queda en el icono junto al reloj."),
         ["Footer.ClearLogs"] = S("Limpar logs", "Clear logs", "Limpiar logs"),
+        // ---- Logs ----
+        ["Logs.All"] = S("Todos", "All", "Todos"),
+        ["Logs.All.Tip"] = S("Mostra todas as linhas do log.", "Shows every log line.", "Muestra todas las líneas del log."),
+        ["Logs.Info"] = S("Info", "Info", "Info"),
+        ["Logs.Info.Tip"] = S(
+            "Mostra só as mensagens normais (INFO e DEBUG).",
+            "Shows only the normal messages (INFO and DEBUG).",
+            "Muestra solo los mensajes normales (INFO y DEBUG)."),
+        ["Logs.Warnings"] = S("Avisos", "Warnings", "Avisos"),
+        ["Logs.Warnings.Tip"] = S("Mostra só os avisos (WARN).", "Shows only the warnings (WARN).",
+            "Muestra solo las advertencias (WARN)."),
+        ["Logs.Errors"] = S("Erros", "Errors", "Errores"),
+        ["Logs.Errors.Tip"] = S("Mostra só os erros (ERROR e FATAL).", "Shows only the errors (ERROR and FATAL).",
+            "Muestra solo los errores (ERROR y FATAL)."),
+        ["Logs.ErrorBadge.Tip"] = S("Erros neste log", "Errors in this log", "Errores en este log"),
+        ["Logs.Search"] = S("Pesquisar no log...", "Search the log...", "Buscar en el log..."),
+        ["Logs.Search.Tip"] = S(
+            "Mostra só as linhas que contêm este texto.",
+            "Shows only the lines that contain this text.",
+            "Muestra solo las líneas que contienen este texto."),
+        ["Logs.Copy"] = S("Copiar", "Copy", "Copiar"),
+        ["Logs.CopyAll"] = S("Copiar tudo que está visível", "Copy everything shown", "Copiar todo lo visible"),
+        ["Logs.Save"] = S("Salvar log...", "Save log...", "Guardar log..."),
+        ["Logs.Save.Tip"] = S(
+            "Salva em um arquivo as linhas mostradas (com o filtro e a pesquisa atuais).",
+            "Saves the lines shown (with the current filter and search) to a file.",
+            "Guarda en un archivo las líneas mostradas (con el filtro y la búsqueda actuales)."),
+        ["Logs.Save.Title"] = S("Salvar log", "Save log", "Guardar log"),
+        ["Logs.Save.Filter"] = S("Arquivos de log (*.log)|*.log|Arquivos de texto (*.txt)|*.txt",
+            "Log files (*.log)|*.log|Text files (*.txt)|*.txt",
+            "Archivos de log (*.log)|*.log|Archivos de texto (*.txt)|*.txt"),
+
         ["Theme.Light"] = S("Tema claro", "Light theme", "Tema claro"),
         ["Theme.Dark"] = S("Tema escuro", "Dark theme", "Tema oscuro"),
     };

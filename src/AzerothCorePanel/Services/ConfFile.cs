@@ -38,7 +38,8 @@ public static class ConfFile
             }
 
             string key = line[..equals].Trim();
-            string value = line[(equals + 1)..].Trim().Trim('"');
+            // Like AzerothCore's ConfigMgr, every quote is removed ("1,4,0,\"1 9 3\"" -> "1,4,0,1 9 3").
+            string value = line[(equals + 1)..].Replace("\"", string.Empty).Trim();
             values[key] = value;
         }
 

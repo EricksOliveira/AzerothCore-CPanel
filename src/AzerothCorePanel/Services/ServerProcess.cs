@@ -79,6 +79,12 @@ public sealed class ServerProcess
     internal string? LogFileConf { get; init; }
 
     /// <summary>
+    /// The .conf whose "Appender.Console" gets the log level prefix when logs come from the console
+    /// (see <see cref="LogLevelPrefix"/>).
+    /// </summary>
+    internal string? ConsoleConf { get; init; }
+
+    /// <summary>
     /// Sends an empty line to the console every second. The worldserver console loop flushes stdout each
     /// time it reads a line, so this makes buffered logs show up within a second; empty lines are ignored.
     /// </summary>
@@ -188,6 +194,7 @@ public sealed class ServerProcess
 
         LogFileInfo? logFile = LogFileConf is null ? null : LogFileLocator.Find(ExePath, LogFileConf);
         _useConsoleOutput = logFile is null;
+        AddLogLevelPrefix(startInfo, logFile);
 
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
         process.OutputDataReceived += (_, e) => OnConsoleOutput(e.Data, false);
@@ -255,6 +262,22 @@ public sealed class ServerProcess
         if (ReadyMarker is null)
         {
             SetState(ServerState.Running);
+        }
+    }
+
+    private void AddLogLevelPrefix(ProcessStartInfo startInfo, LogFileInfo? logFile)
+    {
+        try
+        {
+            string? confPath = logFile?.ConfPath ?? (ConsoleConf is null ? null : ConfFile.Find(ExePath, ConsoleConf));
+            if (confPath is not null)
+            {
+                LogLevelPrefix.Apply(startInfo, confPath, logFile?.AppenderName ?? "Console");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Without the prefix, the level is guessed from the stream and the text.
         }
     }
 

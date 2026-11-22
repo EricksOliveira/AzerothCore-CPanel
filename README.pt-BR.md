@@ -37,6 +37,8 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] **Restart**: para e inicia os dois servidores
 - [x] Ligar ou parar só um servidor pelos botões **Iniciar** e **Parar** da linha dele, na área de status
 - [x] Logs ao vivo de cada processo, em abas, e campo para enviar comandos ao console do worldserver
+- [x] Logs coloridos por nível (INFO azul, WARN amarelo, ERROR vermelho), com filtros, pesquisa, copiar e salvar,
+  e o número de erros em cada aba de log
 - [x] Reinicia o worldserver sozinho quando ele pede restart (`server restart`, código de saída 2)
 - [x] Se o painel fechar ou travar, os servidores não ficam rodando escondidos (Job Object)
 - [x] Auto-restart em caso de crash, com limite de tentativas para não ficar em loop
@@ -76,6 +78,13 @@ Ideias e sugestões são bem-vindas: abra uma [issue](https://github.com/EricksO
   inicia de novo depois de 5 segundos. Depois de 3 quedas em 5 minutos ele desiste, porque o problema
   provavelmente é de configuração ou do banco de dados. Um `server shutdown` dado no jogo ou no console não
   conta como queda.
+- **Logs**: cada linha mostra a hora, o nível e a mensagem. O nível vem do próprio AzerothCore: o painel inicia os
+  servidores com a variável de ambiente `AC_APPENDER_CONSOLE` (authserver: a variável do appender do arquivo de log),
+  que é a sua própria linha do appender mais a flag de "nível do log", então os seus `.conf` não são alterados. Builds
+  antigas que não leem opções de variáveis de ambiente continuam funcionando: os erros passam a ser as linhas da saída
+  de erro, e os avisos são deduzidos pelo texto. Os botões **Todos**, **Info**, **Avisos** e **Erros** mostram um
+  nível por vez, a pesquisa deixa só as linhas com aquele texto, e **Salvar log...** grava em arquivo as linhas
+  mostradas. Selecione linhas e aperte Ctrl+C (ou use o botão direito) para copiar.
 - **Bandeja do sistema**: o ícone fica perto do relógio enquanto o painel está aberto. Clique nele para abrir o
   painel; o botão direito mostra Start, Stop, Restart e Sair. Com **Minimizar para a bandeja** ligado (padrão),
   minimizar tira o painel da barra de tarefas. Quando um servidor cai, aparece uma notificação. No Windows 11 o

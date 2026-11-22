@@ -2,8 +2,11 @@ using System.IO;
 
 namespace AzerothCorePanel.Services;
 
-/// <summary>A server log file and whether the server empties it on every start (mode "w").</summary>
-public sealed record LogFileInfo(string Path, bool TruncatedOnStart);
+/// <summary>
+/// A server log file, whether the server empties it on every start (mode "w"), the .conf it was found in and
+/// the name of the appender that writes it.
+/// </summary>
+public sealed record LogFileInfo(string Path, bool TruncatedOnStart, string ConfPath, string AppenderName);
 
 /// <summary>
 /// Finds the log file written by a server's root logger by reading its .conf file
@@ -62,7 +65,7 @@ public static class LogFileLocator
             }
 
             bool truncated = parts.Length > 4 && parts[4].Contains('w', StringComparison.OrdinalIgnoreCase);
-            return new LogFileInfo(Path.Combine(logsPath, parts[3]), truncated);
+            return new LogFileInfo(Path.Combine(logsPath, parts[3]), truncated, confPath, appender);
         }
 
         return null;
