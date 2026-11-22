@@ -301,7 +301,7 @@
 
     <!-- Logs and tools -->
     <TabControl Grid.Row="3">
-      <TabItem>
+      <TabItem AutomationProperties.Name="Worldserver">
         <TabItem.Header>
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="Worldserver" />
@@ -463,7 +463,7 @@
           </DataGrid>
         </DockPanel>
       </TabItem>
-      <TabItem>
+      <TabItem AutomationProperties.Name="Authserver">
         <TabItem.Header>
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="Authserver" />
