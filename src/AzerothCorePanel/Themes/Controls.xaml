@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
   <!--
     Control styles for both themes. Every color is a DynamicResource from Light.xaml or Dark.xaml, so swapping
     that dictionary re-colors the open window at once. Templates are kept minimal: only controls the panel uses.
@@ -509,6 +510,11 @@
   </ControlTemplate>
 
   <Style TargetType="ScrollBar">
+    <Style.Resources>
+      <!-- The Track makes the thumb at least half of these long; the default gives a dot on long logs. -->
+      <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">48</sys:Double>
+      <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}">48</sys:Double>
+    </Style.Resources>
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Template" Value="{StaticResource VerticalScrollBarTemplate}" />
     <Setter Property="Width" Value="12" />

@@ -99,7 +99,7 @@ public partial class LogView : UserControl, INotifyPropertyChanged
         while (_pending.TryDequeue(out LogEntry? entry))
         {
             _all.Add(entry);
-            _counts[(int)entry.Severity]++;
+            Count(entry, 1);
 
             if (Matches(entry))
             {
@@ -145,7 +145,7 @@ public partial class LogView : UserControl, INotifyPropertyChanged
 
         for (int i = 0; i < remove; i++)
         {
-            _counts[(int)_all[i].Severity]--;
+            Count(_all[i], -1);
         }
 
         _all.RemoveRange(0, remove);
@@ -170,8 +170,21 @@ public partial class LogView : UserControl, INotifyPropertyChanged
         }
     }
 
+    private void Count(LogEntry entry, int delta)
+    {
+        if (!entry.IsBlank)
+        {
+            _counts[(int)entry.Severity] += delta;
+        }
+    }
+
     private bool Matches(LogEntry entry)
     {
+        if (entry.IsBlank)
+        {
+            return _filter is null && _search.Length == 0;
+        }
+
         bool levelMatches = _filter switch
         {
             null => true,
@@ -194,7 +207,7 @@ public partial class LogView : UserControl, INotifyPropertyChanged
 
     private void UpdateCounts(int errorsBefore)
     {
-        AllCount.Text = FormatCount(_all.Count);
+        AllCount.Text = FormatCount(_counts.Sum());
         InfoCount.Text = FormatCount(_counts[(int)LogSeverity.Info] + _counts[(int)LogSeverity.Debug]);
         WarningCount.Text = FormatCount(_counts[(int)LogSeverity.Warning]);
         ErrorCountText.Text = FormatCount(ErrorCount);

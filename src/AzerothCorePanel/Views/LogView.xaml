@@ -12,6 +12,32 @@
     <SolidColorBrush x:Key="LogDebugBrush" Color="#8C8C8C" />
     <SolidColorBrush x:Key="LogTimeBrush" Color="#7A7A7A" />
 
+    <!-- Like SegmentRadio, but the chosen filter is in the text color: red would read as "errors". -->
+    <Style x:Key="FilterRadio" TargetType="RadioButton">
+      <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RadioButton">
+            <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,5" Margin="2">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+              </Trigger>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <Style x:Key="FilterDot" TargetType="Ellipse">
       <Setter Property="Width" Value="8" />
       <Setter Property="Height" Value="8" />
@@ -59,6 +85,9 @@
         <TextBlock x:Name="Message" Text="{Binding Text}" Foreground="{DynamicResource LogTextBrush}" />
       </StackPanel>
       <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsBlank}" Value="True">
+          <Setter TargetName="Level" Property="Visibility" Value="Hidden" />
+        </DataTrigger>
         <DataTrigger Binding="{Binding Severity}" Value="{x:Static services:LogSeverity.Debug}">
           <Setter TargetName="Level" Property="Foreground" Value="{StaticResource LogDebugBrush}" />
           <Setter TargetName="Message" Property="Foreground" Value="{StaticResource LogDebugBrush}" />
@@ -80,14 +109,14 @@
     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
       <Border DockPanel.Dock="Left" Background="{DynamicResource SegmentBackgroundBrush}" CornerRadius="6">
         <StackPanel Orientation="Horizontal">
-          <RadioButton x:Name="AllFilter" Style="{StaticResource SegmentRadio}" IsChecked="True"
+          <RadioButton x:Name="AllFilter" Style="{StaticResource FilterRadio}" IsChecked="True"
                        Checked="Filter_Checked" ToolTip="{l:Tr Logs.All.Tip}">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="{l:Tr Logs.All}" />
               <TextBlock x:Name="AllCount" Style="{StaticResource FilterCount}" Text="0" />
             </StackPanel>
           </RadioButton>
-          <RadioButton x:Name="InfoFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+          <RadioButton x:Name="InfoFilter" Style="{StaticResource FilterRadio}" Checked="Filter_Checked"
                        ToolTip="{l:Tr Logs.Info.Tip}">
             <StackPanel Orientation="Horizontal">
               <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogInfoBrush}" />
@@ -95,7 +124,7 @@
               <TextBlock x:Name="InfoCount" Style="{StaticResource FilterCount}" Text="0" />
             </StackPanel>
           </RadioButton>
-          <RadioButton x:Name="WarningFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+          <RadioButton x:Name="WarningFilter" Style="{StaticResource FilterRadio}" Checked="Filter_Checked"
                        ToolTip="{l:Tr Logs.Warnings.Tip}">
             <StackPanel Orientation="Horizontal">
               <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogWarningBrush}" />
@@ -103,7 +132,7 @@
               <TextBlock x:Name="WarningCount" Style="{StaticResource FilterCount}" Text="0" />
             </StackPanel>
           </RadioButton>
-          <RadioButton x:Name="ErrorFilter" Style="{StaticResource SegmentRadio}" Checked="Filter_Checked"
+          <RadioButton x:Name="ErrorFilter" Style="{StaticResource FilterRadio}" Checked="Filter_Checked"
                        ToolTip="{l:Tr Logs.Errors.Tip}">
             <StackPanel Orientation="Horizontal">
               <Ellipse Style="{StaticResource FilterDot}" Fill="{StaticResource LogErrorBrush}" />

@@ -20,6 +20,12 @@ public sealed class LogEntry
 
     public string Text { get; }
 
+    /// <summary>
+    /// An empty line (AzerothCore prints them between loading steps): shown without a level, only in "All", and
+    /// not counted.
+    /// </summary>
+    public bool IsBlank => string.IsNullOrWhiteSpace(Text);
+
     public string TimeText => Time.ToString("HH:mm:ss");
 
     /// <summary>The AzerothCore level names; not translated, like in the server's own logs.</summary>
@@ -31,5 +37,5 @@ public sealed class LogEntry
         _ => "INFO",
     };
 
-    public override string ToString() => $"[{TimeText}] {LevelText,-5} {Text}";
+    public override string ToString() => IsBlank ? $"[{TimeText}]" : $"[{TimeText}] {LevelText,-5} {Text}";
 }
