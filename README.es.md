@@ -8,7 +8,7 @@ Panel de control para Windows hecho para servidores [AzerothCore](https://www.az
 (World of Warcraft 3.3.5a). En lugar de abrir `authserver.exe` y `worldserver.exe` a mano, el panel se
 encarga de todo con un clic.
 
-> **Estado:** versión 1.2 disponible.
+> **Estado:** versión 1.3 disponible.
 
 ## Descarga
 
