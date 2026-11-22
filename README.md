@@ -7,7 +7,7 @@
 A Windows control panel made for [AzerothCore](https://www.azerothcore.org/) servers (World of Warcraft 3.3.5a).
 Instead of opening `authserver.exe` and `worldserver.exe` by hand, the panel takes care of it with one click.
 
-> **Status:** version 1.3 available.
+> **Status:** version 1.4 available.
 
 ## Download
 
