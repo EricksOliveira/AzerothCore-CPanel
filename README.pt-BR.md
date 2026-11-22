@@ -10,6 +10,15 @@ o painel cuida disso com um clique.
 
 > **Status:** versão 1.4 disponível.
 
+![Janela principal do AzerothCore CPanel, tema claro](assets/screenshots/panel-light.png)
+
+| Tema escuro | Editor de configuração |
+| --- | --- |
+| ![Janela principal, tema escuro](assets/screenshots/panel-dark.png) | ![Editor de configuração](assets/screenshots/config-editor.png) |
+
+> Os prints mostram o painel em inglês, o idioma padrão. Para usar em português, clique na bandeira no canto superior
+> direito.
+
 ## Download
 
 Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).

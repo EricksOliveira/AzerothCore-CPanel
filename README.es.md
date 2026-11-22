@@ -10,6 +10,15 @@ encarga de todo con un clic.
 
 > **Estado:** versión 1.4 disponible.
 
+![Ventana principal de AzerothCore CPanel, tema claro](assets/screenshots/panel-light.png)
+
+| Tema oscuro | Editor de configuración |
+| --- | --- |
+| ![Ventana principal, tema oscuro](assets/screenshots/panel-dark.png) | ![Editor de configuración](assets/screenshots/config-editor.png) |
+
+> Las capturas muestran el panel en inglés, el idioma por defecto. Para usarlo en español, haz clic en la bandera de la
+> esquina superior derecha.
+
 ## Descarga
 
 Descarga `AzerothCorePanel.exe` desde la [página de releases](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).

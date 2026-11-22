@@ -9,6 +9,12 @@ Instead of opening `authserver.exe` and `worldserver.exe` by hand, the panel tak
 
 > **Status:** version 1.4 available.
 
+![AzerothCore CPanel main window, light theme](assets/screenshots/panel-light.png)
+
+| Dark theme | Configuration editor |
+| --- | --- |
+| ![Main window, dark theme](assets/screenshots/panel-dark.png) | ![Configuration editor](assets/screenshots/config-editor.png) |
+
 ## Download
 
 Download `AzerothCorePanel.exe` from the [releases page](https://github.com/EricksOliveira/AzerothCore-CPanel/releases/latest).

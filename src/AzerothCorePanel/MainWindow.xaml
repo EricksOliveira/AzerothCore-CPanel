@@ -18,6 +18,10 @@
       <Setter Property="MinWidth" Value="90" />
     </Style>
     <Style x:Key="LogBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+      <Style.Resources>
+        <!-- Corner between the two scroll bars: same dark color as the log, in both themes. -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#1A1A1A" />
+      </Style.Resources>
       <Setter Property="IsReadOnly" Value="True" />
       <Setter Property="FontFamily" Value="Consolas" />
       <Setter Property="FontSize" Value="12" />
