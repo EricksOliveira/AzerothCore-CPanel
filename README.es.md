@@ -26,6 +26,7 @@ Es un único archivo y no necesita instalar .NET.
 - [x] **Iniciar**: inicia el authserver y luego el worldserver
 - [x] **Detener**: apagado limpio (`server shutdown 1`), sin perder datos de los personajes
 - [x] **Reiniciar**: detiene e inicia los dos servidores
+- [x] Iniciar o detener solo un servidor con los botones **Iniciar** y **Detener** de su fila, en el área de estado
 - [x] Logs en vivo de cada servidor, en pestañas, y un campo para enviar comandos a la consola del worldserver
 - [x] Reinicia el worldserver solo cuando él lo pide (`server restart`, código de salida 2)
 - [x] Si el panel se cierra o se cuelga, los servidores no quedan ejecutándose ocultos (Job Object)
@@ -62,6 +63,8 @@ Las ideas y sugerencias son bienvenidas: abre un [issue](https://github.com/Eric
   carpeta `configs`.
 - **Detener** envía `server shutdown 1` al worldserver y espera a que se cierre (60 segundos por defecto). Si no se
   cierra, el proceso se termina a la fuerza. El authserver se termina directamente, porque no guarda datos del juego.
+- Los botones **Iniciar**, **Detener** y **Reiniciar** principales actúan sobre los dos servidores. Para iniciar o
+  detener solo uno, usa los botones **Iniciar** y **Detener** de su fila (Worldserver o Authserver) en el área de estado.
 - **Reiniciar el servidor si se cae** (activado por defecto): si un servidor se cierra sin que nadie lo pida, el
   panel lo inicia de nuevo a los 5 segundos. Tras 3 caídas en 5 minutos desiste, porque el problema probablemente
   es de configuración o de la base de datos. Un `server shutdown` dado en el juego o en la consola no cuenta como

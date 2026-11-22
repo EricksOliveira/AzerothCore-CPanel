@@ -24,6 +24,7 @@ It is a single file and does not need .NET to be installed.
 - [x] **Start**: starts authserver, then worldserver
 - [x] **Stop**: clean shutdown (`server shutdown 1`), without losing character data
 - [x] **Restart**: stops and starts both servers
+- [x] Start or stop only one server with the **Start** and **Stop** buttons on its row in the status area
 - [x] Live logs for each server, in tabs, and a box to send worldserver console commands
 - [x] Restarts worldserver by itself when it asks for a restart (`server restart`, exit code 2)
 - [x] If the panel closes or crashes, the servers are not left running hidden (Job Object)
@@ -56,6 +57,8 @@ Ideas and suggestions are welcome: open an [issue](https://github.com/EricksOliv
 - Each server starts with its `.exe` folder as the working folder, so AzerothCore finds the `configs` folder.
 - **Stop** sends `server shutdown 1` to worldserver and waits for it to close (60 seconds by default). If it does
   not close, the process is ended by force. authserver is ended directly, since it keeps no game data.
+- The **Start**, **Stop** and **Restart** buttons act on both servers. To start or stop only one, use the **Start**
+  and **Stop** buttons on its row (Worldserver or Authserver) in the status area.
 - **Restart a server that crashes** (on by default): if a server closes without being asked to, the panel starts
   it again after 5 seconds. After 3 crashes in 5 minutes it gives up, since the problem is probably the
   configuration or the database. A `server shutdown` given in game or in the console does not count as a crash.

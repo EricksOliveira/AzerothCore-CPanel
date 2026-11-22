@@ -80,9 +80,12 @@
     <!-- Controls and status -->
     <DockPanel Grid.Row="1" Margin="0,12,0,12" LastChildFill="False">
       <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-        <Button x:Name="StartButton" Content="{l:Tr Main.Start}" Click="StartButton_Click" />
-        <Button x:Name="StopButton" Content="{l:Tr Main.Stop}" Margin="8,0,0,0" Click="StopButton_Click" />
-        <Button x:Name="RestartButton" Content="{l:Tr Main.Restart}" Margin="8,0,0,0" Click="RestartButton_Click" />
+        <Button x:Name="StartButton" Content="{l:Tr Main.Start}" Click="StartButton_Click"
+                ToolTip="{l:Tr Main.Start.Tip}" />
+        <Button x:Name="StopButton" Content="{l:Tr Main.Stop}" Margin="8,0,0,0" Click="StopButton_Click"
+                ToolTip="{l:Tr Main.Stop.Tip}" />
+        <Button x:Name="RestartButton" Content="{l:Tr Main.Restart}" Margin="8,0,0,0" Click="RestartButton_Click"
+                ToolTip="{l:Tr Main.Restart.Tip}" />
       </StackPanel>
 
       <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
@@ -91,6 +94,7 @@
           <ColumnDefinition Width="Auto" MinWidth="240" />
           <ColumnDefinition Width="Auto" MinWidth="80" />
           <ColumnDefinition Width="Auto" MinWidth="100" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
@@ -105,6 +109,12 @@
             <Setter Property="Margin" Value="12,1,0,1" />
             <Setter Property="Foreground" Value="{DynamicResource SubtleTextBrush}" />
           </Style>
+          <!-- Start/Stop buttons of one row (one server, or MySQL). -->
+          <Style x:Key="RowButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="MinWidth" Value="56" />
+            <Setter Property="Margin" Value="6,1,0,1" />
+          </Style>
         </Grid.Resources>
 
         <Ellipse x:Name="WorldDot" Grid.Row="0" Grid.Column="0" Width="12" Height="12" Fill="Gray"
@@ -114,6 +124,12 @@
                    Text="CPU —" ToolTip="{l:Tr Main.Cpu.Tip}" />
         <TextBlock x:Name="WorldRamText" Grid.Row="0" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
+        <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" Margin="6,0,0,0">
+          <Button x:Name="WorldStartButton" Style="{StaticResource RowButton}" Content="{l:Tr Server.Start}"
+                  Click="WorldStartButton_Click" />
+          <Button x:Name="WorldStopButton" Style="{StaticResource RowButton}" Content="{l:Tr Server.Stop}"
+                  Click="WorldStopButton_Click" />
+        </StackPanel>
 
         <Ellipse x:Name="AuthDot" Grid.Row="1" Grid.Column="0" Width="12" Height="12" Fill="Gray"
                  VerticalAlignment="Center" />
@@ -122,20 +138,25 @@
                    Text="CPU —" ToolTip="{l:Tr Main.Cpu.Tip}" />
         <TextBlock x:Name="AuthRamText" Grid.Row="1" Grid.Column="3" Style="{StaticResource MetricText}"
                    Text="RAM —" />
+        <StackPanel Grid.Row="1" Grid.Column="4" Orientation="Horizontal" Margin="6,0,0,0">
+          <Button x:Name="AuthStartButton" Style="{StaticResource RowButton}" Content="{l:Tr Server.Start}"
+                  Click="AuthStartButton_Click" />
+          <Button x:Name="AuthStopButton" Style="{StaticResource RowButton}" Content="{l:Tr Server.Stop}"
+                  Click="AuthStopButton_Click" />
+        </StackPanel>
 
         <Ellipse x:Name="MySqlDot" Grid.Row="2" Grid.Column="0" Width="12" Height="12" Fill="Gray"
                  VerticalAlignment="Center" />
         <TextBlock x:Name="MySqlStatusText" Grid.Row="2" Grid.Column="1" Margin="6,1,0,1" VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" MaxWidth="300" Text="MySQL: —" />
-        <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="12,1,0,1">
-          <Button x:Name="MySqlStartButton" Content="{l:Tr MySql.Start}" Padding="8,0" MinWidth="0"
+        <StackPanel Grid.Row="2" Grid.Column="4" Orientation="Horizontal" Margin="6,0,0,0">
+          <Button x:Name="MySqlStartButton" Style="{StaticResource RowButton}" Content="{l:Tr MySql.Start}"
                   Click="MySqlStartButton_Click" ToolTip="{l:Tr MySql.Start.Tip}" />
-          <Button x:Name="MySqlStopButton" Content="{l:Tr MySql.Stop}" Padding="8,0" MinWidth="0" Margin="6,0,0,0"
+          <Button x:Name="MySqlStopButton" Style="{StaticResource RowButton}" Content="{l:Tr MySql.Stop}"
                   Click="MySqlStopButton_Click" />
         </StackPanel>
 
-        <TextBlock x:Name="PlayersStatusText" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Margin="6,1,0,1"
+        <TextBlock x:Name="PlayersStatusText" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="4" Margin="6,1,0,1"
                    VerticalAlignment="Center" />
       </Grid>
     </DockPanel>

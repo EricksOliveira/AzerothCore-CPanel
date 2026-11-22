@@ -372,14 +372,27 @@ public partial class MainWindow : Window
         }, L.T("Err.StopMySql"));
     }
 
-    private async Task StartServersAsync()
+    private async void WorldStartButton_Click(object sender, RoutedEventArgs e) =>
+        await StartServersAsync(_manager.World);
+
+    private async void AuthStartButton_Click(object sender, RoutedEventArgs e) =>
+        await StartServersAsync(_manager.Auth);
+
+    private async void WorldStopButton_Click(object sender, RoutedEventArgs e) => await StopServerAsync(_manager.World);
+
+    private async void AuthStopButton_Click(object sender, RoutedEventArgs e) => await StopServerAsync(_manager.Auth);
+
+    /// <summary>Starts both servers, or only <paramref name="only"/> when given (the row buttons).</summary>
+    private async Task StartServersAsync(ServerProcess? only = null)
     {
-        if (_busy || !PathsValid || _manager.AllRunning)
+        if (_busy || !PathsValid || (only is null ? _manager.AllRunning : only.IsRunning))
         {
             return;
         }
 
-        IReadOnlyList<string> foreign = _manager.FindForeignServers();
+        IReadOnlyList<string> foreign = only is null
+            ? _manager.FindForeignServers()
+            : _manager.FindForeignServers(only);
         if (foreign.Count > 0)
         {
             MessageBoxResult answer = ShowMessage(
@@ -400,7 +413,14 @@ public partial class MainWindow : Window
 
         try
         {
-            _manager.StartAll();
+            if (only is null)
+            {
+                _manager.StartAll();
+            }
+            else
+            {
+                _manager.StartServer(only);
+            }
         }
         catch (Exception ex)
         {
@@ -415,6 +435,14 @@ public partial class MainWindow : Window
         if (!_busy)
         {
             await RunBusyAsync(_manager.StopAllAsync, L.T("Err.StopServers"));
+        }
+    }
+
+    private async Task StopServerAsync(ServerProcess server)
+    {
+        if (!_busy)
+        {
+            await RunBusyAsync(() => _manager.StopServerAsync(server), L.T("Err.StopServers"));
         }
     }
 
@@ -811,6 +839,9 @@ public partial class MainWindow : Window
         CommandBox.IsEnabled = canSend;
         SendCommandButton.IsEnabled = canSend;
 
+        ShowRowButtons(_manager.World, WorldStartButton, WorldStopButton);
+        ShowRowButtons(_manager.Auth, AuthStartButton, AuthStopButton);
+
         MySqlStartButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Stopped;
         MySqlStopButton.IsEnabled = !_busy && _mySql is not null && _mySqlState == MySqlState.Running && !active;
         MySqlStopButton.ToolTip = active ? L.T("MySql.StopFirst.Tip") : L.T("MySql.Stop.Tip");
@@ -822,6 +853,15 @@ public partial class MainWindow : Window
             $"{_manager.Auth.Name}: {StateLabel(_manager.Auth).Label}" +
             (_mySql is not null ? $"\nMySQL: {MySqlLabel(_mySqlState).Label}" : string.Empty) +
             (_onlinePlayers is int online ? "\n" + L.F("Players.Online", online) : string.Empty));
+    }
+
+    /// <summary>Enables the Start/Stop buttons of one server's row and names the server in their tooltips.</summary>
+    private void ShowRowButtons(ServerProcess server, Button start, Button stop)
+    {
+        start.IsEnabled = !_busy && PathsValid && !server.IsRunning;
+        stop.IsEnabled = !_busy && (server.IsRunning || _manager.IsRestartPending(server));
+        start.ToolTip = L.F("Server.Start.Tip", server.Name);
+        stop.ToolTip = L.F("Server.Stop.Tip", server.Name);
     }
 
     private void UpdateStatus()

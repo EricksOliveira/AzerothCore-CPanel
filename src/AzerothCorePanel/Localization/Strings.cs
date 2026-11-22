@@ -45,6 +45,18 @@ internal static class Strings
         ["Main.Start"] = S("▶ Start", "▶ Start", "▶ Iniciar"),
         ["Main.Stop"] = S("■ Stop", "■ Stop", "■ Detener"),
         ["Main.Restart"] = S("⟳ Restart", "⟳ Restart", "⟳ Reiniciar"),
+        ["Main.Start.Tip"] = S("Inicia o authserver e o worldserver", "Starts authserver and worldserver",
+            "Inicia el authserver y el worldserver"),
+        ["Main.Stop.Tip"] = S(
+            "Desliga o worldserver (salvando os personagens) e o authserver",
+            "Shuts down worldserver (saving the characters) and authserver",
+            "Apaga el worldserver (guardando los personajes) y el authserver"),
+        ["Main.Restart.Tip"] = S("Para e inicia os dois servidores", "Stops and starts both servers",
+            "Detiene e inicia los dos servidores"),
+        ["Server.Start"] = S("Iniciar", "Start", "Iniciar"),
+        ["Server.Stop"] = S("Parar", "Stop", "Detener"),
+        ["Server.Start.Tip"] = S("Inicia só o {0}", "Starts only {0}", "Inicia solo el {0}"),
+        ["Server.Stop.Tip"] = S("Para só o {0}", "Stops only {0}", "Detiene solo el {0}"),
         ["Main.Cpu.Tip"] = S(
             "Uso de CPU somando todos os núcleos (como no Gerenciador de Tarefas)",
             "CPU use across all cores (like Task Manager)",

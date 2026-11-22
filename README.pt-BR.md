@@ -26,6 +26,7 @@ Baixe o `AzerothCorePanel.exe` na [página de releases](https://github.com/Erick
 - [x] **Start**: inicia o Authserver e depois o Worldserver
 - [x] **Stop**: desligamento limpo (`server shutdown 1`), sem perder dados dos personagens
 - [x] **Restart**: para e inicia os dois servidores
+- [x] Ligar ou parar só um servidor pelos botões **Iniciar** e **Parar** da linha dele, na área de status
 - [x] Logs ao vivo de cada processo, em abas, e campo para enviar comandos ao console do worldserver
 - [x] Reinicia o worldserver sozinho quando ele pede restart (`server restart`, código de saída 2)
 - [x] Se o painel fechar ou travar, os servidores não ficam rodando escondidos (Job Object)
@@ -60,6 +61,8 @@ Ideias e sugestões são bem-vindas: abra uma [issue](https://github.com/EricksO
   pasta `configs`.
 - **Stop** envia `server shutdown 1` ao worldserver e espera ele fechar (60 segundos por padrão). Se não
   fechar, o processo é encerrado à força. O authserver é encerrado direto, porque não guarda dados de jogo.
+- Os botões **Start**, **Stop** e **Restart** valem para os dois servidores. Para ligar ou parar só um, use os botões
+  **Iniciar** e **Parar** da linha dele (Worldserver ou Authserver) na área de status.
 - **Reiniciar servidor se cair** (ligado por padrão): se um servidor fechar sem ninguém pedir, o painel o
   inicia de novo depois de 5 segundos. Depois de 3 quedas em 5 minutos ele desiste, porque o problema
   provavelmente é de configuração ou do banco de dados. Um `server shutdown` dado no jogo ou no console não

@@ -86,13 +86,14 @@ public sealed class ServerManager : IDisposable
     }
 
     /// <summary>
-    /// Returns the names of AzerothCore processes already running that this panel did not start.
+    /// Returns the names of AzerothCore processes already running that this panel did not start, among
+    /// <paramref name="servers"/> (both servers when none are given).
     /// </summary>
-    public IReadOnlyList<string> FindForeignServers()
+    public IReadOnlyList<string> FindForeignServers(params ServerProcess[] servers)
     {
         var found = new List<string>();
 
-        foreach (ServerProcess server in new[] { Auth, World })
+        foreach (ServerProcess server in servers.Length > 0 ? servers : new[] { Auth, World })
         {
             if (server.IsRunning)
             {
@@ -136,6 +137,34 @@ public sealed class ServerManager : IDisposable
     {
         await StopAllAsync();
         StartAll();
+    }
+
+    /// <summary>Starts one server, leaving the other as it is.</summary>
+    public void StartServer(ServerProcess server)
+    {
+        CancelPendingRestart(server);
+        server.Start();
+    }
+
+    /// <summary>Stops one server, leaving the other as it is (worldserver still saves the players).</summary>
+    public async Task StopServerAsync(ServerProcess server)
+    {
+        CancelPendingRestart(server);
+        await server.StopAsync(ShutdownTimeout);
+    }
+
+    /// <summary>Cancels a pending crash restart of one server and gives it a fresh restart budget.</summary>
+    private void CancelPendingRestart(ServerProcess server)
+    {
+        lock (_restartLock)
+        {
+            if (_pendingRestarts.Remove(server, out CancellationTokenSource? cts))
+            {
+                cts.Cancel();
+            }
+
+            _crashRestarts.Remove(server);
+        }
     }
 
     public void Dispose()
